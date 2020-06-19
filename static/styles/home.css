@@ -1,25 +1,47 @@
- .post-preview > a {
+#post-list {
+  background-color: #fff;
+}
+
+hr {
+  border: 0;
+  width: 95%;
+  background-color:#aaa;
+  height: 1px;
+  margin: 0;
+}
+
+.post-preview {
+  padding: 10px 25px;
+  width: 100%;
+}
+
+.post-preview:hover {
+  background-color: #f8f8f8;
+}
+
+.post-preview > a {
   color: #212529;
 }
 
-.post-preview > a:focus, .post-preview > a:hover {
+.post-preview:hover > a, .post-preview:hover > a {
   text-decoration: none;
   color: #0085A1;
 }
 
 .post-preview > a > .post-title {
-  font-size: 30px;
+  font-size: 25px;
   margin-top: 30px;
   margin-bottom: 10px;
 }
 
 .post-preview > a > .post-subtitle {
+  font-size: 20px;
   font-weight: 300;
   margin: 0 0 10px;
 }
 
 .post-preview > .post-meta {
-  font-size: 18px;
+  font-size: 16px;
   font-style: italic;
   margin-top: 0;
   color: #868e96;
@@ -37,7 +59,7 @@
 
 @media only screen and (min-width: 768px) {
   .post-preview > a > .post-title {
-    font-size: 36px;
+    font-size: 25px;
   }
 }
 
