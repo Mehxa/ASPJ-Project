@@ -2,6 +2,10 @@ body {
   background-color: #ededed;
 }
 
+.btn-danger {
+  background-color: #de4040;
+}
+
 /* Navbar*/
 
 .navbar {

@@ -6,16 +6,43 @@
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container my-4">
   <div class="row justify-content-center">
-    <div class="col-md-10">
-      <div class="row">
-        <div class="btn btn-danger post">Add Post</div>
-      </div>
+    <div class="col-md-3">
+      <div class="sticky-top">
+        <div>
+          <div class="btn btn-danger w-100" style="margin-top: 15px;">Add Post</div>
+        </div>
 
-      <div class="row mt-4" id="post-list">
+        <div class="mt-3" id="trending-topics">
+          <p class="font-weight-bold my-3">
+            Trending Topics
+          </p>
+
+          <hr class="mx-auto">
+
+          <p class="topic align-middle m-0">
+            <span>#1</span>
+            Python
+          </p>
+
+          <p class="topic align-middle m-0">
+            <span>#2</span>
+            Java
+          </p>
+
+          <p class="topic align-middle m-0">
+            <span>#3</span>
+            Stack
+          </p>
+        </div> <!--Trending Topics-->
+      </div> <!--Stick--->
+    </div> <!--Column-->
+
+
+    <div class="col-md-9"> <!--For all the posts-->
         <div class="post-preview">
-          <a href="post.html">
+          <a href="/viewPost">
             <h1 class="post-title">
               Hi my name is Hon Hon and you are watching Disney Channel!
             </h1>
@@ -29,10 +56,8 @@
           </p>
         </div> <!--Post-->
 
-        <hr class="mx-auto">
-
         <div class="post-preview">
-          <a href="post.html">
+          <a href="/viewPost">
           <h1 class="post-title">
             Man must explore, and this is exploration at its greatest
           </h1>
@@ -45,9 +70,68 @@
             on September 24, 2019
           </p>
         </div> <!--Post-->
-      </div> <!--Sub-Row-->
 
+        <div class="post-preview">
+          <a href="/viewPost">
+            <h1 class="post-title">
+              Hi my name is Hon Hon and you are watching Disney Channel!
+            </h1>
+            <h2 class="post-subtitle">
+              Just imagine that I'm drawing the Mickey Mouse shape with a wand 🐭✨
+            </h2>
+          </a>
+          <p class="post-meta">Posted by
+            <a href="#">Baguette</a>
+            on September 24, 2019
+          </p>
+        </div> <!--Post-->
+
+        <div class="post-preview">
+          <a href="/viewPost">
+          <h1 class="post-title">
+            Man must explore, and this is exploration at its greatest
+          </h1>
+          <h2 class="post-subtitle">
+            Problems look mighty small from 150 miles up
+          </h2>
+          </a>
+          <p class="post-meta">Posted by
+            <a href="#">Whichever user</a>
+            on September 24, 2019
+          </p>
+        </div> <!--Post-->
+
+        <div class="post-preview">
+          <a href="/viewPost">
+            <h1 class="post-title">
+              Hi my name is Hon Hon and you are watching Disney Channel!
+            </h1>
+            <h2 class="post-subtitle">
+              Just imagine that I'm drawing the Mickey Mouse shape with a wand 🐭✨
+            </h2>
+          </a>
+          <p class="post-meta">Posted by
+            <a href="#">Baguette</a>
+            on September 24, 2019
+          </p>
+        </div> <!--Post-->
+
+        <div class="post-preview">
+          <a href="/viewPost">
+          <h1 class="post-title">
+            Man must explore, and this is exploration at its greatest
+          </h1>
+          <h2 class="post-subtitle">
+            Problems look mighty small from 150 miles up
+          </h2>
+          </a>
+          <p class="post-meta">Posted by
+            <a href="#">Whichever user</a>
+            on September 24, 2019
+          </p>
+        </div> <!--Post-->
     </div> <!--Column-->
+
   </div> <!--Row-->
 </div> <!--Container-->
 {% endblock %}

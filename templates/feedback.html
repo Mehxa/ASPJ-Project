@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Feedback{% endblock %}
-{% block style %}<link rel="stylesheet" href="/static/styles/feedback.css">{% endblock %}
+{% block style %}{% endblock %}
 
 {% block content %}
 {% from "includes/_formhelper.html" import render_field %}
 <div class="container mt-4">
   <div class="row justify-content-center">
-    <div class="col-lg-10 col-md-10">
+    <div class="col-md-10">
       <h1>Feedback</h1>
 
       <form method="POST" class="mt-4">
