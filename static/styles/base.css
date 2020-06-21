@@ -6,6 +6,38 @@ body {
   background-color: #de4040;
 }
 
+span.post-votes i.fa,
+.comment-functions i.fa {
+  color: #888;
+}
+
+span.post-votes,
+.comment-functions,
+.comment-functions a {
+  color: #888;
+  font-weight: bold;
+}
+
+.comment-functions a:hover,
+.comment-functions a:hover i.fa-reply {
+  text-decoration: none;
+  color: #1c7bff;
+}
+
+span.post-votes a i.fa-arrow-up:hover,
+span.post-votes a i.fa-arrow-up.active,
+.comment-functions a .fa-arrow-up:hover,
+.comment-functions a i.fa-arrow-up.active {
+  color: #02b805;
+}
+
+span.post-votes a i.fa-arrow-down:hover,
+span.post-votes a i.fa-arrow-down.active,
+.comment-functions a i.fa-arrow-down:hover,
+.comment-functions a i.fa-arrow-down.active {
+  color: #de0223;
+}
+
 /* Navbar*/
 
 .navbar {
