@@ -6,6 +6,22 @@ body {
   background-color: #de4040;
 }
 
+
+/* Flash */
+.flash.alert-success {
+  background-color: #c7f2c7;
+  border: 1px solid #8fcf8f;
+  color: #1b801b;
+}
+
+.flash.alert-danger {
+  background-color:#f2c7c7;
+  border: 1px solid #cf8f8f;
+  color: #801b1b;
+}
+
+
+/* Comment and Post meta */
 span.post-votes i.fa,
 .comment-functions i.fa {
   color: #888;
@@ -38,8 +54,7 @@ span.post-votes a i.fa-arrow-down.active,
   color: #de0223;
 }
 
-/* Navbar*/
-
+/* Navbar */
 .navbar {
   background-color: #de4040;
 }

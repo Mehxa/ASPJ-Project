@@ -1,22 +1,24 @@
-from wtforms import Form, validators, StringField, TextAreaField, PasswordField
+from wtforms import Form, validators, StringField, TextAreaField, PasswordField, SelectField
 
 class FeedbackForm(Form):
-    firstName = StringField("First Name", [validators.DataRequired()], render_kw={"placeholder": "Alice"})
-    lastName = StringField("Last Name", [validators.DataRequired()], render_kw={"placeholder": "Tan"})
-    email = StringField('Email Address', [validators.Length(min=6, max=35)], render_kw={"placeholder": "alicetan@email.com"})
-    reason = StringField("Reason", [validators.DataRequired()], render_kw={"placeholder": "Feedback regarding post moderation"})
-    comment = TextAreaField('Comment', [validators.DataRequired()], render_kw={"rows": 5, "placeholder": "Enter comment here..."})
+    reason = StringField('Reason', [validators.DataRequired()], render_kw={"placeholder": "e.g. Feedback regarding post moderation"})
+    comment = TextAreaField('Comment', [validators.DataRequired()], render_kw={"rows": 10, "placeholder": "Enter comment here..."})
 
 class LoginForm(Form):
-    username = StringField("Username", [validators.DataRequired()])
+    username = StringField('Username', [validators.DataRequired()])
     password = PasswordField('Password', [validators.DataRequired()])
 
 class SignUpForm(Form):
-    email = StringField('Email Address', [validators.Length(min=6, max=35)])
-    username = StringField("Username", [validators.DataRequired()])
-    name = StringField("Full Name", [validators.DataRequired()])
+    email = StringField('Email Address', [validators.DataRequired()])
+    username = StringField('Username', [validators.DataRequired()])
+    name = StringField('Full Name', [validators.DataRequired()])
     password = PasswordField('New Password', [
         validators.DataRequired(),
         validators.EqualTo('confirmPassword', message='Passwords do not match.')
     ])
     confirmPassword = PasswordField('Re-enter Password', [validators.DataRequired()])
+
+class PostForm(Form):
+    topic = SelectField('Topic', coerce=int)
+    title = StringField('Title', [validators.DataRequired()], render_kw={"placeholder": "e.g. Error Exception handling in Python"})
+    content = TextAreaField('Content', [validators.DataRequired()], render_kw={"rows": 10, "placeholder": "Enter content here..."})

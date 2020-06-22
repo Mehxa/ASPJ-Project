@@ -8,10 +8,14 @@
 {% block content %}
 <div class="container my-4">
   <div class="row justify-content-center">
+    <div class="col-md-12">
+      {{ flash() }}
+    </div>
+
     <div class="col-md-3">
       <div class="sticky-top">
         <div>
-          <div class="btn btn-danger w-100" style="margin-top: 15px;">Add Post</div>
+          <a href="/addPost" class="btn btn-danger w-100" style="margin-top: 15px;">Add Post</a>
         </div>
 
         <div class="mt-3" id="trending-topics">

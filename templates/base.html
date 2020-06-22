@@ -22,10 +22,11 @@
         {%include 'includes/_navbar.html'%}
     {% endblock %}
 
+    {% from "includes/_flash.html" import flash %}
     {% block content %}
     {% endblock %}
-    {% block scripts %}
 
+    {% block scripts %}
     {% endblock %}
 </body>
 </html>

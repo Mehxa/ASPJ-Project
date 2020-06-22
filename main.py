@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash
 import mysql.connector, re
 import Forms
 from datetime import datetime
@@ -15,10 +15,10 @@ mycursor.execute("SHOW TABLES")
 print(mycursor)
 
 app = Flask(__name__)
+app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 
-tempPosts = {
-
-}
+sessionInfo = {'login': False, 'currentUserID': 0, 'username': ''}
+# sessionInfo = {'login': True, 'currentUserID': 7, 'username': 'johnnyjohnny'}
 
 @app.route('/')
 def main():
@@ -26,38 +26,77 @@ def main():
 
 @app.route('/home', methods=["GET"])
 def home():
-    return render_template('home.html', currentPage='home')
+    return render_template('home.html', currentPage='home', **sessionInfo)
 
 @app.route('/viewPost')
 def viewPost():
-    return render_template('viewPost.html', currentPage='viewPost')
+    return render_template('viewPost.html', currentPage='viewPost', **sessionInfo)
 
 @app.route('/addPost', methods=["GET", "POST"])
 def addPost():
-    return render_template('addPost.html', currentPage='home')
+    if not sessionInfo['login']:
+        return redirect('/login')
+
+    sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
+    mycursor.execute(sql)
+    listOfTopics = mycursor.fetchall()
+
+    postForm = Forms.PostForm(request.form)
+    postForm.topic.choices = listOfTopics
+
+    if request.method == 'POST' and postForm.validate():
+        dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+        sql = 'INSERT INTO post (TopicID, UserID, DateTimePosted, Title, Content, Upvotes, Downvotes) VALUES (%s, %s, %s, %s, %s, %s, %s)'
+        val = (postForm.topic.data, sessionInfo['currentUserID'], dateTime, postForm.title.data, postForm.content.data, 0, 0)
+        mycursor.execute(sql, val)
+        db.commit()
+        flash('Post successfully created!', 'success')
+        return redirect('/home')
+
+    return render_template('addPost.html', currentPage='addPost', **sessionInfo, postForm=postForm)
 
 @app.route('/feedback', methods=["GET", "POST"])
 def feedback():
+    if not sessionInfo['login']:
+        return redirect('/login')
     feedbackForm = Forms.FeedbackForm(request.form)
 
     if request.method == 'POST' and feedbackForm.validate():
-        mycursor.execute('SELECT FeedbackID FROM feedback WHERE FeedbackID=(SELECT max(FeedbackID) FROM feedback)')
-        lastIdRegistered = mycursor.fetchall()
-        availId = lastIdRegistered[0][0] + 1
         dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
-        sql = 'INSERT INTO feedback (FeedbackID, UserID, Reason, Content, DateTimePosted) VALUES (%s, %s, %s, %s, %s)'
-        # Need to link to current userID to work
-        val = (availId, 1, feedbackForm.reason.data, feedbackForm.comment.data, dateTime)
+        sql = 'INSERT INTO feedback (UserID, Reason, Content, DateTimePosted) VALUES (%s, %s, %s, %s)'
+        val = (sessionInfo['currentUserID'], feedbackForm.reason.data, feedbackForm.comment.data, dateTime)
         mycursor.execute(sql, val)
         db.commit()
+        flash('Feedback sent!', 'success')
+        return redirect('/feedback')
 
-    return render_template('feedback.html', currentPage='feedback', feedbackForm = feedbackForm)
+    return render_template('feedback.html', currentPage='feedback', **sessionInfo, feedbackForm = feedbackForm)
 
 @app.route('/login', methods=["GET", "POST"])
 def login():
     loginForm = Forms.LoginForm(request.form)
+    if request.method == 'POST' and loginForm.validate():
+        sql = "SELECT UserID, Username FROM user WHERE Username=%s AND Password=%s"
+        val = (loginForm.username.data, loginForm.password.data)
+        mycursor.execute(sql, val)
+        findUser = mycursor.fetchone()
+        if findUser==None:
+            loginForm.password.errors.append('Wrong email or password.')
+        else:
+            sessionInfo['login'] = True
+            sessionInfo['currentUserID'] = int(findUser[0])
+            sessionInfo['username'] = findUser[1]
+            flash('Welcome! You are now logged in as %s.' %(sessionInfo['username']), 'success')
+            return redirect('/home') # Change this later to redirect to profile page
 
-    return render_template('login.html', currentPage='login', loginForm = loginForm)
+    return render_template('login.html', currentPage='login', **sessionInfo, loginForm = loginForm)
+
+@app.route('/logout')
+def logout():
+    sessionInfo['login'] = False
+    sessionInfo['currentUser'] = 0
+    sessionInfo['username'] = ''
+    return redirect('/home')
 
 @app.route('/signup', methods=["GET", "POST"])
 def signUp():
@@ -66,13 +105,9 @@ def signUp():
     if request.method == 'POST' and signUpForm.validate():
         if not(re.search('^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$', signUpForm.email.data)):
             signUpForm.email.errors.append('Invalid email address.')
-            pass
 
-        mycursor.execute('SELECT UserID FROM user WHERE UserID=(SELECT max(UserID) FROM user)')
-        lastIdRegistered = mycursor.fetchall()
-        availId = lastIdRegistered[0][0] + 1
-        sql = 'INSERT INTO user (UserID, Name, Email, Username, Password, isAdmin) VALUES (%s, %s, %s, %s, %s, %s)'
-        val = (availId, signUpForm.name.data, signUpForm.email.data, signUpForm.username.data, signUpForm.password.data, 0)
+        sql = 'INSERT INTO user (Name, Email, Username, Password, isAdmin) VALUES (%s, %s, %s, %s, %s)'
+        val = (signUpForm.name.data, signUpForm.email.data, signUpForm.username.data, signUpForm.password.data, 0)
         try:
             mycursor.execute(sql, val)
             db.commit()
@@ -84,7 +119,23 @@ def signUp():
             elif 'username' in errorMsg.lower():
                 signUpForm.username.errors.append('This username is already taken.')
 
-    return render_template('signup.html', currentPage='signUp', signUpForm = signUpForm)
+        else:
+            sql = "SELECT UserID, Username FROM user WHERE Username=%s AND Password=%s"
+            val = (signUpForm.username.data, signUpForm.password.data)
+            mycursor.execute(sql, val)
+            findUser = mycursor.fetchone()
+            sessionInfo['login'] = True
+            sessionInfo['currentUserID'] = int(findUser[0])
+            sessionInfo['username'] = findUser[1]
+
+            flash('Account successfully created! You are now logged in as %s.' %(sessionInfo['username']), 'success')
+            return redirect('/home')
+
+    return render_template('signup.html', currentPage='signUp', **sessionInfo, signUpForm = signUpForm)
+
+@app.route('/profile', methods=["GET", "POST"])
+def profile():
+    return render_template('profile.html', currentPage='myProfile', **sessionInfo)
 
 if __name__ == "__main__":
     app.run(debug=True)

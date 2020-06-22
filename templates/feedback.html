@@ -6,26 +6,16 @@
 {% from "includes/_formhelper.html" import render_field %}
 <div class="container mt-4">
   <div class="row justify-content-center">
-    <div class="col-md-10">
+    <div class="col-md-8">
+      {{ flash() }}
+    </div>
+
+    <div class="col-md-8">
       <h1>Feedback</h1>
 
       <form method="POST" class="mt-4">
-        <div class="row form-group">
-          <div class="col-md-6">
-            {{render_field(feedbackForm.firstName, class= "form-control")}}
-          </div>
-
-          <div class="col-md-6">
-            {{render_field(feedbackForm.lastName, class= "form-control")}}
-          </div>
-        </div>
-
         <div class="form-group">
           {{render_field(feedbackForm.reason, class= "form-control")}}
-        </div>
-
-        <div class="form-group">
-          {{render_field(feedbackForm.email, class= "form-control")}}
         </div>
 
         <div class="form-group">
@@ -33,7 +23,7 @@
         </div>
 
         <div class="form-group">
-          <input type="submit" class="btn btn-success" onclick="alert('Your feedback has been submitted!')">
+          <input type="submit" class="btn btn-success">
         </div>
       </form>
     </div> <!--Column-->
