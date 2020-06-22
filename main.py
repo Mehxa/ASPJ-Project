@@ -10,15 +10,26 @@ db = mysql.connector.connect(
     database="blogdb"
 )
 
-mycursor = db.cursor(buffered=True)
-mycursor.execute("SHOW TABLES")
-print(mycursor)
+tupleCursor = db.cursor(buffered=True)
+dictCursor = db.cursor(buffered=True, dictionary=True)
+tupleCursor.execute("SHOW TABLES")
+print(tupleCursor)
 
 app = Flask(__name__)
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 
-sessionInfo = {'login': False, 'currentUserID': 0, 'username': ''}
-# sessionInfo = {'login': True, 'currentUserID': 7, 'username': 'johnnyjohnny'}
+""" For testing purposes only. To make it convenient cause I can't remember all the account names.
+Uncomment the account that you would like to use. To run the program as not logged in, run the first one."""
+# sessionInfo = {'login': False, 'currentUserID': 0, 'username': '', 'isAdmin': 0}
+# sessionInfo = {'login': True, 'currentUserID': 1, 'username': 'NotABot', 'isAdmin': 1}
+# sessionInfo = {'login': True, 'currentUserID': 2, 'username': 'CoffeeGirl', 'isAdmin': 1}
+# sessionInfo = {'login': True, 'currentUserID': 3, 'username': 'Mexha', 'isAdmin': 1}
+# sessionInfo = {'login': True, 'currentUserID': 4, 'username': 'Kobot', 'isAdmin': 1}
+sessionInfo = {'login': True, 'currentUserID': 5, 'username': 'MarySinceBirthButStillSingle', 'isAdmin': 0}
+# sessionInfo = {'login': True, 'currentUserID': 6, 'username': 'theauthenticcoconut', 'isAdmin': 0}
+# sessionInfo = {'login': True, 'currentUserID': 7, 'username': 'johnnyjohnny', 'isAdmin': 0}
+# sessionInfo = {'login': True, 'currentUserID': 8, 'username': 'iamjeff', 'isAdmin': 0}
+# sessionInfo = {'login': True, 'currentUserID': 9, 'username': 'hanbaobao', 'isAdmin': 0}
 
 @app.route('/')
 def main():
@@ -26,11 +37,70 @@ def main():
 
 @app.route('/home', methods=["GET"])
 def home():
-    return render_template('home.html', currentPage='home', **sessionInfo)
+    sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
+    sql += " INNER JOIN user ON post.UserID=user.UserID"
+    sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
+    sql += " ORDER BY post.PostID DESC LIMIT 6"
 
-@app.route('/viewPost')
-def viewPost():
-    return render_template('viewPost.html', currentPage='viewPost', **sessionInfo)
+    dictCursor.execute(sql)
+    recentPosts = dictCursor.fetchall()
+    for post in recentPosts:
+        post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
+        post['Content'] = post['Content'][:200]
+
+    return render_template('home.html', currentPage='home', **sessionInfo, recentPosts = recentPosts)
+
+@app.route('/viewPost/<int:postID>', methods=["GET", "POST"])
+def viewPost(postID):
+    if not sessionInfo['login']:
+        return redirect('/login')
+
+    sql = "SELECT post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
+    sql += " INNER JOIN user ON post.UserID=user.UserID"
+    sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
+    sql += " WHERE PostID=" + str(postID)
+    dictCursor.execute(sql)
+    post = dictCursor.fetchone()
+    post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
+
+    sql = "SELECT comment.CommentID, comment.Content, comment.DatetimePosted, comment.Upvotes, comment.Downvotes, comment.DatetimePosted, user.Username FROM comment"
+    sql += " INNER JOIN user ON comment.UserID=user.UserID"
+    sql += " WHERE comment.PostID=" + str(postID) + " AND comment.RepliedID IS NULL"
+    dictCursor.execute(sql)
+    commentList = dictCursor.fetchall()
+    for comment in commentList:
+        comment['TotalVotes'] = comment['Upvotes'] - comment['Downvotes']
+
+        sql = "SELECT comment.Content, comment.DatetimePosted, comment.Upvotes, comment.Downvotes, comment.DatetimePosted, user.Username FROM comment"
+        sql += " INNER JOIN user ON comment.UserID=user.UserID"
+        sql += " WHERE comment.PostID=" + str(postID) + " AND comment.RepliedID=" + str(comment['CommentID'])
+        dictCursor.execute(sql)
+        replyList = dictCursor.fetchall()
+        comment['ReplyList'] = replyList
+
+    commentForm = Forms.CommentForm(request.form)
+    replyForm = Forms.ReplyForm(request.form)
+
+    if request.method == 'POST' and commentForm.validate():
+        dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+        sql = 'INSERT INTO comment (PostID, UserID, RepliedID, Content, DateTimePosted, Upvotes, Downvotes) VALUES (%s, %s, %s, %s, %s, %s, %s)'
+        val = (postID, sessionInfo['currentUserID'], None, commentForm.comment.data, dateTime, 0, 0)
+        tupleCursor.execute(sql, val)
+        db.commit()
+        flash('Comment posted!', 'success')
+        return redirect('/viewPost/%d' %postID)
+
+    if request.method == 'POST' and replyForm.validate():
+        dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+        print(replyForm.repliedID.data, '>>>>>>>>>>>>>>>>>>>>>>>')
+        sql = 'INSERT INTO comment (PostID, UserID, RepliedID, Content, DateTimePosted, Upvotes, Downvotes) VALUES (%s, %s, %s, %s, %s, %s, %s)'
+        val = (postID, sessionInfo['currentUserID'], replyForm.repliedID.data, replyForm.reply.data, dateTime, 0, 0)
+        tupleCursor.execute(sql, val)
+        db.commit()
+        flash('Comment posted!', 'success')
+        return redirect('/viewPost/%d' %postID)
+
+    return render_template('viewPost.html', currentPage='viewPost', **sessionInfo, commentForm = commentForm, replyForm = replyForm, post = post, commentList = commentList)
 
 @app.route('/addPost', methods=["GET", "POST"])
 def addPost():
@@ -38,8 +108,8 @@ def addPost():
         return redirect('/login')
 
     sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
-    mycursor.execute(sql)
-    listOfTopics = mycursor.fetchall()
+    tupleCursor.execute(sql)
+    listOfTopics = tupleCursor.fetchall()
 
     postForm = Forms.PostForm(request.form)
     postForm.topic.choices = listOfTopics
@@ -48,7 +118,7 @@ def addPost():
         dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
         sql = 'INSERT INTO post (TopicID, UserID, DateTimePosted, Title, Content, Upvotes, Downvotes) VALUES (%s, %s, %s, %s, %s, %s, %s)'
         val = (postForm.topic.data, sessionInfo['currentUserID'], dateTime, postForm.title.data, postForm.content.data, 0, 0)
-        mycursor.execute(sql, val)
+        tupleCursor.execute(sql, val)
         db.commit()
         flash('Post successfully created!', 'success')
         return redirect('/home')
@@ -65,7 +135,7 @@ def feedback():
         dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
         sql = 'INSERT INTO feedback (UserID, Reason, Content, DateTimePosted) VALUES (%s, %s, %s, %s)'
         val = (sessionInfo['currentUserID'], feedbackForm.reason.data, feedbackForm.comment.data, dateTime)
-        mycursor.execute(sql, val)
+        tupleCursor.execute(sql, val)
         db.commit()
         flash('Feedback sent!', 'success')
         return redirect('/feedback')
@@ -76,16 +146,17 @@ def feedback():
 def login():
     loginForm = Forms.LoginForm(request.form)
     if request.method == 'POST' and loginForm.validate():
-        sql = "SELECT UserID, Username FROM user WHERE Username=%s AND Password=%s"
+        sql = "SELECT UserID, Username, isAdmin FROM user WHERE Username=%s AND Password=%s"
         val = (loginForm.username.data, loginForm.password.data)
-        mycursor.execute(sql, val)
-        findUser = mycursor.fetchone()
+        dictCursor.execute(sql, val)
+        findUser = dictCursor.fetchone()
         if findUser==None:
             loginForm.password.errors.append('Wrong email or password.')
         else:
             sessionInfo['login'] = True
-            sessionInfo['currentUserID'] = int(findUser[0])
-            sessionInfo['username'] = findUser[1]
+            sessionInfo['currentUserID'] = int(findUser['UserID'])
+            sessionInfo['username'] = findUser['Username']
+            sessionInfo['isAdmin'] = findUser['isAdmin']
             flash('Welcome! You are now logged in as %s.' %(sessionInfo['username']), 'success')
             return redirect('/home') # Change this later to redirect to profile page
 
@@ -109,7 +180,7 @@ def signUp():
         sql = 'INSERT INTO user (Name, Email, Username, Password, isAdmin) VALUES (%s, %s, %s, %s, %s)'
         val = (signUpForm.name.data, signUpForm.email.data, signUpForm.username.data, signUpForm.password.data, 0)
         try:
-            mycursor.execute(sql, val)
+            tupleCursor.execute(sql, val)
             db.commit()
 
         except mysql.connector.errors.IntegrityError as errorMsg:
@@ -122,8 +193,8 @@ def signUp():
         else:
             sql = "SELECT UserID, Username FROM user WHERE Username=%s AND Password=%s"
             val = (signUpForm.username.data, signUpForm.password.data)
-            mycursor.execute(sql, val)
-            findUser = mycursor.fetchone()
+            tupleCursor.execute(sql, val)
+            findUser = tupleCursor.fetchone()
             sessionInfo['login'] = True
             sessionInfo['currentUserID'] = int(findUser[0])
             sessionInfo['username'] = findUser[1]

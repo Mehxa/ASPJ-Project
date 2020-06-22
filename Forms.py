@@ -1,4 +1,4 @@
-from wtforms import Form, validators, StringField, TextAreaField, PasswordField, SelectField
+from wtforms import Form, validators, StringField, TextAreaField, PasswordField, SelectField, HiddenField
 
 class FeedbackForm(Form):
     reason = StringField('Reason', [validators.DataRequired()], render_kw={"placeholder": "e.g. Feedback regarding post moderation"})
@@ -22,3 +22,10 @@ class PostForm(Form):
     topic = SelectField('Topic', coerce=int)
     title = StringField('Title', [validators.DataRequired()], render_kw={"placeholder": "e.g. Error Exception handling in Python"})
     content = TextAreaField('Content', [validators.DataRequired()], render_kw={"rows": 10, "placeholder": "Enter content here..."})
+
+class CommentForm(Form):
+    comment = TextAreaField('Comment', [validators.DataRequired()], render_kw={"rows": 3, "placeholder": "Enter comment here..."})
+
+class ReplyForm(Form):
+    repliedID = HiddenField()
+    reply = TextAreaField('Comment', [validators.DataRequired()], render_kw={"rows": 3, "placeholder": "Enter comment here..."})
