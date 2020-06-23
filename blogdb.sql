@@ -1,8 +1,10 @@
--- MySQL dump 10.13  Distrib 8.0.19, for Win64 (x86_64)
+CREATE DATABASE  IF NOT EXISTS `blogdb` /*!40100 DEFAULT CHARACTER SET latin1 */;
+USE `blogdb`;
+-- MySQL dump 10.13  Distrib 8.0.20, for Win64 (x86_64)
 --
 -- Host: 127.0.0.1    Database: blogdb
 -- ------------------------------------------------------
--- Server version	8.0.19
+-- Server version	5.7.30-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -23,23 +25,20 @@ DROP TABLE IF EXISTS `comment`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `comment` (
-  `CommentID` smallint NOT NULL AUTO_INCREMENT,
-  `PostID` smallint NOT NULL,
-  `UserID` tinyint NOT NULL,
-  `RepliedID` smallint DEFAULT NULL,
+  `CommentID` smallint(6) NOT NULL AUTO_INCREMENT,
+  `PostID` smallint(6) NOT NULL,
+  `UserID` tinyint(4) NOT NULL,
   `DatetimePosted` datetime NOT NULL,
   `Content` mediumtext NOT NULL,
-  `Upvotes` mediumint NOT NULL,
-  `Downvotes` mediumint NOT NULL,
+  `Upvotes` mediumint(9) NOT NULL,
+  `Downvotes` mediumint(9) NOT NULL,
   PRIMARY KEY (`CommentID`),
   UNIQUE KEY `CommentID_UNIQUE` (`CommentID`),
   KEY `fk_comment_PostID_idx` (`PostID`),
   KEY `fk_comment_UserID_idx` (`UserID`),
-  KEY `fk_comment_RepliedID_idx` (`RepliedID`),
   CONSTRAINT `fk_comment_PostID` FOREIGN KEY (`PostID`) REFERENCES `post` (`PostID`),
-  CONSTRAINT `fk_comment_RepliedID` FOREIGN KEY (`RepliedID`) REFERENCES `comment` (`CommentID`),
   CONSTRAINT `fk_comment_UserID` FOREIGN KEY (`UserID`) REFERENCES `user` (`UserID`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -48,8 +47,35 @@ CREATE TABLE `comment` (
 
 LOCK TABLES `comment` WRITE;
 /*!40000 ALTER TABLE `comment` DISABLE KEYS */;
-INSERT INTO `comment` VALUES (1,3,4,NULL,'2020-06-22 17:59:18','I prefer using single quotes as it saves me effort from pressing the \'Shift\' button hahhaha. The only time I use double quotes is when I wish to print out single quotes. For example, print(\"I\'m using single quotes in this sentence, hence I\'ve to use double quotes to surround it.\")',0,0),(2,3,6,NULL,'2020-06-22 18:18:29','Just use whichever you want. It doesn\'t make a difference. It does annoy me tho when working with others on the same project and everyone doesn\'t standardise the use of quotations....',0,0),(3,3,8,1,'2020-06-22 21:48:22','^^ Lazy people unite',0,0),(4,3,5,1,'2020-06-22 22:42:51','same here!!',0,0);
+INSERT INTO `comment` VALUES (1,3,4,'2020-06-22 17:59:18','I prefer using single quotes as it saves me effort from pressing the \'Shift\' button hahhaha. The only time I use double quotes is when I wish to print out single quotes. For example, print(\"I\'m using single quotes in this sentence, hence I\'ve to use double quotes to surround it.\")',0,0),(2,3,6,'2020-06-22 18:18:29','Just use whichever you want. It doesn\'t make a difference. It does annoy me tho when working with others on the same project and everyone doesn\'t standardise the use of quotations....',0,0),(3,3,8,'2020-06-22 21:48:22','^^ Lazy people unite',0,0),(4,3,5,'2020-06-22 22:42:51','same here!!',0,0);
 /*!40000 ALTER TABLE `comment` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `comment_votes`
+--
+
+DROP TABLE IF EXISTS `comment_votes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `comment_votes` (
+  `UserID` tinyint(4) NOT NULL,
+  `CommentID` smallint(6) NOT NULL,
+  `Vote` tinyint(4) NOT NULL,
+  PRIMARY KEY (`UserID`,`CommentID`),
+  KEY `fk_comment_votes_CommentID_idx` (`CommentID`),
+  CONSTRAINT `fk_comment_votes_CommentID` FOREIGN KEY (`CommentID`) REFERENCES `comment` (`CommentID`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_comment_votes_UserID` FOREIGN KEY (`UserID`) REFERENCES `user` (`UserID`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `comment_votes`
+--
+
+LOCK TABLES `comment_votes` WRITE;
+/*!40000 ALTER TABLE `comment_votes` DISABLE KEYS */;
+/*!40000 ALTER TABLE `comment_votes` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -60,8 +86,8 @@ DROP TABLE IF EXISTS `feedback`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `feedback` (
-  `FeedbackID` tinyint NOT NULL AUTO_INCREMENT,
-  `UserID` tinyint NOT NULL,
+  `FeedbackID` tinyint(4) NOT NULL AUTO_INCREMENT,
+  `UserID` tinyint(4) NOT NULL,
   `Reason` tinytext NOT NULL,
   `Content` mediumtext NOT NULL,
   `DatetimePosted` datetime NOT NULL,
@@ -70,7 +96,7 @@ CREATE TABLE `feedback` (
   UNIQUE KEY `DatetimePosted_UNIQUE` (`DatetimePosted`),
   KEY `fk_feedback_UserID_idx` (`UserID`),
   CONSTRAINT `fk_feedback_UserID` FOREIGN KEY (`UserID`) REFERENCES `user` (`UserID`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -91,21 +117,21 @@ DROP TABLE IF EXISTS `post`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `post` (
-  `PostID` smallint NOT NULL AUTO_INCREMENT,
-  `TopicID` tinyint NOT NULL,
-  `UserID` tinyint NOT NULL,
+  `PostID` smallint(6) NOT NULL AUTO_INCREMENT,
+  `TopicID` tinyint(4) NOT NULL,
+  `UserID` tinyint(4) NOT NULL,
   `DatetimePosted` datetime NOT NULL,
   `Title` text NOT NULL,
   `Content` mediumtext NOT NULL,
-  `Upvotes` mediumint NOT NULL,
-  `Downvotes` mediumint NOT NULL,
+  `Upvotes` mediumint(9) NOT NULL,
+  `Downvotes` mediumint(9) NOT NULL,
   PRIMARY KEY (`PostID`),
   UNIQUE KEY `PostID_UNIQUE` (`PostID`),
   KEY `fk_post_TopicID_idx` (`TopicID`),
   KEY `fk_post_UserID_idx` (`UserID`),
   CONSTRAINT `fk_post_TopicID` FOREIGN KEY (`TopicID`) REFERENCES `topic` (`TopicID`),
   CONSTRAINT `fk_post_UserID` FOREIGN KEY (`UserID`) REFERENCES `user` (`UserID`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -119,6 +145,63 @@ INSERT INTO `post` VALUES (1,17,5,'2020-06-22 14:34:26','Regex to validate date 
 UNLOCK TABLES;
 
 --
+-- Table structure for table `post_votes`
+--
+
+DROP TABLE IF EXISTS `post_votes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `post_votes` (
+  `UserID` tinyint(4) NOT NULL,
+  `PostID` smallint(6) NOT NULL,
+  `Vote` tinyint(4) NOT NULL,
+  PRIMARY KEY (`UserID`,`PostID`),
+  KEY `fk_votes_PostID_idx` (`PostID`),
+  CONSTRAINT `fk_post_votes_PostID` FOREIGN KEY (`PostID`) REFERENCES `post` (`PostID`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_post_votes_UserID` FOREIGN KEY (`UserID`) REFERENCES `user` (`UserID`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `post_votes`
+--
+
+LOCK TABLES `post_votes` WRITE;
+/*!40000 ALTER TABLE `post_votes` DISABLE KEYS */;
+/*!40000 ALTER TABLE `post_votes` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `reply`
+--
+
+DROP TABLE IF EXISTS `reply`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `reply` (
+  `ReplyID` smallint(6) NOT NULL,
+  `CommentID` smallint(6) NOT NULL,
+  `UserID` tinyint(4) NOT NULL,
+  `Content` mediumtext NOT NULL,
+  `DatetimePosted` datetime NOT NULL,
+  PRIMARY KEY (`ReplyID`),
+  KEY `fk_reply_CommentID_idx` (`CommentID`),
+  KEY `fk_reply_UserID_idx` (`UserID`),
+  CONSTRAINT `fk_reply_CommentID` FOREIGN KEY (`CommentID`) REFERENCES `comment` (`CommentID`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_reply_UserID` FOREIGN KEY (`UserID`) REFERENCES `user` (`UserID`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `reply`
+--
+
+LOCK TABLES `reply` WRITE;
+/*!40000 ALTER TABLE `reply` DISABLE KEYS */;
+/*!40000 ALTER TABLE `reply` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `topic`
 --
 
@@ -126,8 +209,8 @@ DROP TABLE IF EXISTS `topic`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `topic` (
-  `TopicID` tinyint NOT NULL AUTO_INCREMENT,
-  `UserID` tinyint NOT NULL,
+  `TopicID` tinyint(4) NOT NULL AUTO_INCREMENT,
+  `UserID` tinyint(4) NOT NULL,
   `Content` mediumtext NOT NULL,
   `DatetimePosted` datetime NOT NULL,
   PRIMARY KEY (`TopicID`),
@@ -135,7 +218,7 @@ CREATE TABLE `topic` (
   UNIQUE KEY `DatetimePosted_UNIQUE` (`DatetimePosted`),
   KEY `fk_topic_UserID_idx` (`UserID`),
   CONSTRAINT `fk_topic_UserID` FOREIGN KEY (`UserID`) REFERENCES `user` (`UserID`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -156,17 +239,19 @@ DROP TABLE IF EXISTS `user`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `user` (
-  `UserID` tinyint NOT NULL AUTO_INCREMENT,
+  `UserID` tinyint(4) NOT NULL AUTO_INCREMENT,
   `Name` varchar(40) NOT NULL,
   `Email` varchar(50) NOT NULL,
   `Username` varchar(30) NOT NULL,
   `Password` varchar(50) NOT NULL,
-  `isAdmin` tinyint NOT NULL,
+  `Status` tinytext,
+  `Birthday` date NOT NULL,
+  `isAdmin` tinyint(4) NOT NULL,
   PRIMARY KEY (`UserID`),
   UNIQUE KEY `UserID_UNIQUE` (`UserID`),
   UNIQUE KEY `Email_UNIQUE` (`Email`),
   UNIQUE KEY `Username_UNIQUE` (`Username`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -175,7 +260,7 @@ CREATE TABLE `user` (
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` VALUES (1,'Jams','jams@lorem-ipsum.com','NotABot','NotABot123',1),(2,'Siti Sarah','sitisarah@lorem-ipsum.com','CoffeeGirl','CoffeeGirl123',1),(3,'Muhammad','muhammad@lorem-ipsum.com','Mexha','Mexha123',1),(4,'Ko Jia Ling','kojialing@lorem-ipsum.com','Kobot','Kobot123',1),(5,'Mary Tan','marytan@gmail.com','MarySinceBirthButStillSingle','MaryTan123',0),(6,'Coco Mak','coconut@gmail.com','theauthenticcoconut','nuts@coco',0),(7,'Johnathan Tay Wei Jun','john2004@gmail.com','johnnyjohnny','hohohomerrychristmas',0),(8,'Amelia Jefferson','ameliajeff0206','iamjeff','iaminevitable',0),(9,'Alexander Han','hansolo02@live.com','hanbaobao','burgerking02',0);
+INSERT INTO `user` VALUES (1,'Jams','jams@lorem-ipsum.com','NotABot','NotABot123',NULL,'0000-00-00',1),(2,'Siti Sarah','sitisarah@lorem-ipsum.com','CoffeeGirl','CoffeeGirl123',NULL,'2002-02-14',1),(3,'Muhammad','muhammad@lorem-ipsum.com','Mexha','Mexha123',NULL,'2002-03-15',1),(4,'Ko Jia Ling','kojialing@lorem-ipsum.com','Kobot','Kobot123',NULL,'2003-01-01',1),(5,'Mary Tan','marytan@gmail.com','MarySinceBirthButStillSingle','MaryTan123',NULL,'0000-00-00',0),(6,'Coco Mak','coconut@gmail.com','theauthenticcoconut','nuts@coco',NULL,'0000-00-00',0),(7,'Johnathan Tay Wei Jun','john2004@gmail.com','johnnyjohnny','hohohomerrychristmas',NULL,'0000-00-00',0),(8,'Amelia Jefferson','ameliajeff0206','iamjeff','iaminevitable',NULL,'0000-00-00',0),(9,'Alexander Han','hansolo02@live.com','hanbaobao','burgerking02',NULL,'0000-00-00',0);
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -188,4 +273,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-06-22 23:00:49
+-- Dump completed on 2020-06-24  2:37:06
