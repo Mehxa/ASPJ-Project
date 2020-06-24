@@ -227,5 +227,46 @@ def signUp():
 def profile():
     return render_template('profile.html', currentPage='myProfile', **sessionInfo)
 
+@app.route('/adminHome')
+def adminHome():
+    return render_template('adminHome.html', currentPage='adminHome', **sessionInfo)
+
+@app.route('/adminTopics')
+def adminTopics():
+    # uncomment from here
+    # sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
+    # tupleCursor.execute(sql)
+    # listOfTopics = tupleCursor.fetchall()
+    return render_template('adminTopics.html', currentPage='adminTopics', **sessionInfo, listOfTopics=listOfTopics)
+
+@app.route('/addTopic', methods=["GET", "POST"])
+def addTopic():
+    # uncomment here
+    # if not sessionInfo['login']:
+        # return redirect('/login')
+    # til here
+    # sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
+    # tupleCursor.execute(sql)
+    # listOfTopics = tupleCursor.fetchall()
+
+    # uncomment here topicForm = Forms.TopicForm(request.form)
+    # topicForm.topic.choices = listOfTopics
+    # uncomment here
+    # if request.method == 'POST' and postForm.validate():
+    #     dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+    #     sql = 'INSERT INTO topic (TopicID, UserID, Content, DateTimePosted) VALUES (%s, %s, %s, %s)'
+    #     val = ("need to generate?", sessionInfo['currentUserID'],topicForm.topic.data, dateTime)
+    #     tupleCursor.execute(sql, val)
+    #     db.commit()
+    #     flash('Topic successfully created!', 'success')
+    #     return redirect('/adminHome')
+        # till here
+
+
+    return render_template('addTopic.html', currentPage='addTopic', **sessionInfo, topicForm=topicForm)
+
+@app.route('/adminUsers')
+def adminUsers():
+    return render_template('adminUsers.html', currentPage='adminUsers', **sessionInfo)
 if __name__ == "__main__":
     app.run(debug=True)
