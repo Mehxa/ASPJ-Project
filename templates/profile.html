@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block style %}
+<link rel="stylesheet" type="text/css" href="static/styles/profile.css">
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <div class="col-md-9">
+    <!-- {% for post in recentPosts %}
+      <div class="post-preview">
+        <a href="/viewPost/{{ post.PostID }}">
+          <h1 class="post-title">
+            {{ post.Title }}
+          </h1>
+          <h2 class="post-subtitle">
+            {{ post.Content }} <span style="color: #6a6a6a; font-size: 14px;">... See More</span>
+          </h2>
+        </a>
+        <span class="post-meta">Posted by <a href="#">{{ post.Username }}</a> on {{ post.DatetimePosted }} | <a href="#">{{ post.Topic }}</a></span>
+
+        <span class="post-votes ml-auto float-right">
+          <a href="#"><i class="fa fa-arrow-up"></i></a>
+          <span id="postTotalVotes">{{ post.TotalVotes }}</span>
+          <a href="#"><i class="fa fa-arrow-down"></i></a>
+        </span>
+      </div>
+    {% endfor %} -->
+  </div>
+  <div class="col-md-5 profilebg mx-auto">
+    <p class="profile-title my-3">{{username}}'s Profile</p>
+    <hr class="mx-auto">
+    <div class="profile-field">
+      <div class="col-md-3">
+      <span class="field-title">Name:</span>
+      </div>
+      <div class="col-md-9">
+        <p class="value">Nah Fam</p>
+      </div>
+    </div>
+    <div class="profile-field">
+      <div class="col-md-3">
+      <span class="field-title">Username:</span>
+      </div>
+      <div class="col-md-9">
+        <p class="value">{{username}}</p>
+      </div>
+    </div>
+    <div class="text-center">
+      <button type="submit" class="btn btn-success">Edit Profile</button>
+    </div>
+  </div>
+</div>
+{% endblock %}

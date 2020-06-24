@@ -206,6 +206,18 @@ def signUp():
 
 @app.route('/profile', methods=["GET", "POST"])
 def profile():
+    # sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
+    # sql += " INNER JOIN user ON post.UserID=user.UserID"
+    # sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
+    # sql += " ORDER BY post.PostID DESC LIMIT 6"
+    # sql += " WHERE UserID=" + str(sessionInfo['currentUserID'])
+    # dictCursor.execute(sql)
+    # recentPosts = dictCursor.fetchall()
+    #
+    # for post in recentPosts:
+    #     post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
+    #     post['Content'] = post['Content'][:200]
+
     return render_template('profile.html', currentPage='myProfile', **sessionInfo)
 
 if __name__ == "__main__":
