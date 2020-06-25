@@ -3,6 +3,10 @@ from wtforms.fields import DateField
 from wtforms_components import DateRange
 from datetime import date
 
+class SearchBarForm(Form):
+    searchQuery = StringField('Search Query', [validators.DataRequired()], render_kw={"placeholder": "Search for a post..."})
+    topic = SelectField('Topic', coerce=int)
+
 class FeedbackForm(Form):
     reason = StringField('Reason', [validators.DataRequired()], render_kw={"placeholder": "e.g. Feedback regarding post moderation"})
     comment = TextAreaField('Comment', [validators.DataRequired()], render_kw={"rows": 10, "placeholder": "Enter comment here..."})
@@ -16,7 +20,7 @@ class SignUpForm(Form):
     year, month, day = today.split('-')
     minYear = int(year) - 13
     month, day = int(month), int(day)
-    
+
     email = StringField('Email Address', [validators.DataRequired(), validators.Regexp(r'^.+@[^.].*\.[a-z]{2,10}$', message="Invalid email address.")])
     username = StringField('Username', [validators.DataRequired()])
     dob = DateField('Date of Birth', [DateRange(max=date(minYear, month, day), message="You have to be at least 13 years old to register for an account.")])
