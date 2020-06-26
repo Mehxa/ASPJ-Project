@@ -17,3 +17,7 @@
 .value{
   text-align: center;
 }
+
+.profile-field .col-md-3{
+  display: flex;
+}

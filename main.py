@@ -20,16 +20,16 @@ app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 
 """ For testing purposes only. To make it convenient cause I can't remember all the account names.
 Uncomment the account that you would like to use. To run the program as not logged in, run the first one."""
-sessionInfo = {'login': False, 'currentUserID': 0, 'username': '', 'isAdmin': 0}
+# sessionInfo = {'login': False, 'currentUserID': 0, 'username': '', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 1, 'username': 'NotABot', 'isAdmin': 1}
 # sessionInfo = {'login': True, 'currentUserID': 2, 'username': 'CoffeeGirl', 'isAdmin': 1}
-# sessionInfo = {'login': True, 'currentUserID': 3, 'username': 'Mexha', 'isAdmin': 1}
+sessionInfo = {'login': True, 'currentUserID': 3, 'username': 'Mehxa', 'isAdmin': 1}
 # sessionInfo = {'login': True, 'currentUserID': 4, 'username': 'Kobot', 'isAdmin': 1}
 # sessionInfo = {'login': True, 'currentUserID': 5, 'username': 'MarySinceBirthButStillSingle', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 6, 'username': 'theauthenticcoconut', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 7, 'username': 'johnnyjohnny', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 8, 'username': 'iamjeff', 'isAdmin': 0}
-sessionInfo = {'login': True, 'currentUserID': 9, 'username': 'hanbaobao', 'isAdmin': 0}
+# sessionInfo = {'login': True, 'currentUserID': 9, 'username': 'hanbaobao', 'isAdmin': 0}
 
 @app.route('/')
 def main():
@@ -223,21 +223,62 @@ def signUp():
 
     return render_template('signup.html', currentPage='signUp', **sessionInfo, signUpForm = signUpForm)
 
-@app.route('/profile', methods=["GET", "POST"])
-def profile():
-    # sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
-    # sql += " INNER JOIN user ON post.UserID=user.UserID"
-    # sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
-    # sql += " ORDER BY post.PostID DESC LIMIT 6"
-    # sql += " WHERE UserID=" + str(sessionInfo['currentUserID'])
-    # dictCursor.execute(sql)
-    # recentPosts = dictCursor.fetchall()
-    #
-    # for post in recentPosts:
-    #     post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
-    #     post['Content'] = post['Content'][:200]
+@app.route('/profile/<username>', methods=["GET", "POST"])
+def profile(username):
+    updateProfileForm = Forms.SignUpForm(request.form)
+    sql = "SELECT * FROM user WHERE user.Username='" + str(username) + "'"
+    dictCursor.execute(sql)
+    userData = dictCursor.fetchone()
+    sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
+    sql += " INNER JOIN user ON post.UserID=user.UserID"
+    sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
+    sql += " WHERE user.Username='" + str(username) + "'"
+    sql += " ORDER BY post.PostID DESC LIMIT 6"
+    dictCursor.execute(sql)
+    recentPosts = dictCursor.fetchall()
+    userData['Credibility'] = 0
+    if userData['Status'] == None:
+        userData['Status'] = userData['Username'] + " is too lazy to add a status"
+    for post in recentPosts:
+        post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
+        userData['Credibility'] += post['TotalVotes']
+        post['Content'] = post['Content'][:200]
 
-    return render_template('profile.html', currentPage='myProfile', **sessionInfo)
+    if request.method == "POST" and updateProfileForm.validate():
+        sql = "UPDATE user"
+        sql += "SET Username='" + updateProfileForm.username.data + "'"
+        sql += "Password='" + updateProfileForm.password.data + "'"
+        sql += "Name='" + updateProfileForm.name.data + "'"
+        sql += "Email='" + updateProfileForm.email.data + "'"
+        sql += "Status='" + updateProfileForm.status.data + "'"
+        sql += "Birthday='" + str(updateProfileForm.dob.data) + "'"
+        sql += "WHERE UserID='" + sessionInfo['currentUserID'] + "'"
+        try:
+            tupleCursor.execute(sql)
+            db.commit()
+
+        except mysql.connector.errors.IntegrityError as errorMsg:
+            errorMsg = str(errorMsg)
+            if 'email' in errorMsg.lower():
+                updateProfileForm.email.errors.append('The email has already been linked to another account. Please use a different email.')
+            elif 'username' in errorMsg.lower():
+                updateProfileForm.username.errors.append('This username is already taken.')
+        else:
+            sql = "SELECT UserID, Username FROM user WHERE"
+            sql += " Username='" + updateProfileForm.username.data + "'"
+            sql += " AND Password='" + updateProfileForm.password.data + "'"
+            tupleCursor.execute(sql)
+            findUser = tupleCursor.fetchone()
+            sessionInfo['login'] = True
+            sessionInfo['currentUserID'] = int(findUser[0])
+            sessionInfo['username'] = findUser[1]
+
+            flash('Account successfully updated! You are now logged in as %s.' %(sessionInfo['username']), 'success')
+            return redirect('/profile/' + sessionInfo['username'])
+
+
+
+    return render_template('profile.html', currentPage='myProfile', **sessionInfo, userData=userData, recentPosts=recentPosts, updateProfileForm=updateProfileForm)
 
 @app.route('/adminHome')
 def adminHome():
@@ -246,32 +287,33 @@ def adminHome():
 @app.route('/adminTopics')
 def adminTopics():
     # uncomment from here
-    # sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
-    # tupleCursor.execute(sql)
-    # listOfTopics = tupleCursor.fetchall()
+    sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
+    tupleCursor.execute(sql)
+    listOfTopics = tupleCursor.fetchall()
     return render_template('adminTopics.html', currentPage='adminTopics', **sessionInfo, listOfTopics=listOfTopics)
 
 @app.route('/addTopic', methods=["GET", "POST"])
 def addTopic():
     # uncomment here
-    # if not sessionInfo['login']:
-        # return redirect('/login')
+    if not sessionInfo['login']:
+        return redirect('/login')
     # til here
-    # sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
-    # tupleCursor.execute(sql)
-    # listOfTopics = tupleCursor.fetchall()
+    sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
+    tupleCursor.execute(sql)
+    listOfTopics = tupleCursor.fetchall()
 
-    # uncomment here topicForm = Forms.TopicForm(request.form)
-    # topicForm.topic.choices = listOfTopics
     # uncomment here
-    # if request.method == 'POST' and postForm.validate():
-    #     dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
-    #     sql = 'INSERT INTO topic (TopicID, UserID, Content, DateTimePosted) VALUES (%s, %s, %s, %s)'
-    #     val = ("need to generate?", sessionInfo['currentUserID'],topicForm.topic.data, dateTime)
-    #     tupleCursor.execute(sql, val)
-    #     db.commit()
-    #     flash('Topic successfully created!', 'success')
-    #     return redirect('/adminHome')
+    topicForm = Forms.TopicForm(request.form)
+    topicForm.topic.choices = listOfTopics
+    # uncomment here
+    if request.method == 'POST' and postForm.validate():
+        dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+        sql = 'INSERT INTO topic (TopicID, UserID, Content, DateTimePosted) VALUES (%s, %s, %s, %s)'
+        val = ("need to generate?", sessionInfo['currentUserID'],topicForm.topic.data, dateTime)
+        tupleCursor.execute(sql, val)
+        db.commit()
+        flash('Topic successfully created!', 'success')
+        return redirect('/adminHome')
         # till here
 
 
