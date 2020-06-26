@@ -277,6 +277,30 @@ def profile():
 
     return render_template('profile.html', currentPage='myProfile', **sessionInfo)
 
+@app.route('/adminUsers/<username>', methods=["GET", "POST"])
+def adminUserProfile(username):
+    sql = "SELECT * FROM user WHERE user.Username='" + str(username) + "'"
+    dictCursor.execute(sql)
+    userData = dictCursor.fetchone()
+    sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
+    sql += " INNER JOIN user ON post.UserID=user.UserID"
+    sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
+    sql += " WHERE user.Username='" + str(username) + "'"
+    sql += " ORDER BY post.PostID DESC LIMIT 6"
+    dictCursor.execute(sql)
+    recentPosts = dictCursor.fetchall()
+    userData['Credibility'] = 0
+    if userData['Status'] == None:
+        userData['Status'] = userData['Username'] + " is too lazy to add a status"
+    for post in recentPosts:
+        post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
+        userData['Credibility'] += post['TotalVotes']
+        post['Content'] = post['Content'][:200]
+
+    return render_template(, context)
+
+
+
 @app.route('/adminHome')
 def adminHome():
     sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
