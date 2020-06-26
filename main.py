@@ -277,7 +277,7 @@ def profile():
 
     return render_template('profile.html', currentPage='myProfile', **sessionInfo)
 
-@app.route('/adminUsers/<username>', methods=["GET", "POST"])
+@app.route('/adminProfile/<username>', methods=["GET", "POST"])
 def adminUserProfile(username):
     sql = "SELECT * FROM user WHERE user.Username='" + str(username) + "'"
     dictCursor.execute(sql)
@@ -297,7 +297,7 @@ def adminUserProfile(username):
         userData['Credibility'] += post['TotalVotes']
         post['Content'] = post['Content'][:200]
 
-    return render_template(, context)
+    return render_template("adminProfile.html", currentPage = "myProfile", **sessionInfo, userData = userData, recentPosts = recentPosts)
 
 
 
@@ -359,5 +359,12 @@ def adminUsers():
     listOfUsernames = tupleCursor.fetchall()
     print(listOfUsernames)
     return render_template('adminUsers.html', currentPage='adminUsers', **sessionInfo, listOfUsernames = listOfUsernames)
+
+@app.route('/adminDeleteUser/<username>', methods=['POST'])
+def deleteUser(username):
+    sql = "DELETE FROM user WHERE user.username= '"+username+"'"
+    tupleCursor.execute(sql)
+    return redirect('/adminUsers')
+
 if __name__ == "__main__":
     app.run(debug=True)
