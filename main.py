@@ -279,37 +279,50 @@ def profile():
 
 @app.route('/adminHome')
 def adminHome():
-    return render_template('adminHome.html', currentPage='adminHome', **sessionInfo)
+    sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
+    sql += " INNER JOIN user ON post.UserID=user.UserID"
+    sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
+    sql += " ORDER BY post.PostID DESC LIMIT 6"
+
+    dictCursor.execute(sql)
+    recentPosts = dictCursor.fetchall()
+    for post in recentPosts:
+        post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
+        post['Content'] = post['Content'][:200]
+
+    return render_template('adminHome.html', currentPage='adminHome', **sessionInfo, recentPosts = recentPosts)
 
 @app.route('/adminTopics')
 def adminTopics():
     # uncomment from here
-    # sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
-    # tupleCursor.execute(sql)
-    # listOfTopics = tupleCursor.fetchall()
+    sql = "SELECT Content FROM topic ORDER BY Content ASC LIMIT 15"
+    tupleCursor.execute(sql)
+    listOfTopics = tupleCursor.fetchall()
     return render_template('adminTopics.html', currentPage='adminTopics', **sessionInfo, listOfTopics=listOfTopics)
 
 @app.route('/addTopic', methods=["GET", "POST"])
 def addTopic():
-    # uncomment here
-    # if not sessionInfo['login']:
-        # return redirect('/login')
-    # til here
-    # sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
-    # tupleCursor.execute(sql)
-    # listOfTopics = tupleCursor.fetchall()
 
-    # uncomment here topicForm = Forms.TopicForm(request.form)
-    # topicForm.topic.choices = listOfTopics
     # uncomment here
-    # if request.method == 'POST' and postForm.validate():
-    #     dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
-    #     sql = 'INSERT INTO topic (TopicID, UserID, Content, DateTimePosted) VALUES (%s, %s, %s, %s)'
-    #     val = ("need to generate?", sessionInfo['currentUserID'],topicForm.topic.data, dateTime)
-    #     tupleCursor.execute(sql, val)
-    #     db.commit()
-    #     flash('Topic successfully created!', 'success')
-    #     return redirect('/adminHome')
+    if not sessionInfo['login']:
+        return redirect('/login')
+    # til here
+    sql = "SELECT Content FROM topic ORDER BY Content"
+
+    tupleCursor.execute(sql)
+    listOfTopics = tupleCursor.fetchall()
+
+    topicForm = Forms.TopicForm(request.form)
+    topicForm.topic.choices = listOfTopics
+    # uncomment here
+    if request.method == 'POST' and topicForm.validate():
+        dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+        sql = 'INSERT INTO topic ( UserID, Content, DateTimePosted) VALUES ( %s,%s, %s)'
+        val = (sessionInfo["currentUserID"],topicForm.topic.data, dateTime)
+        tupleCursor.execute(sql, val)
+        db.commit()
+        flash('Topic successfully created!', 'success')
+        return redirect('/adminHome')
         # till here
 
 
@@ -317,6 +330,10 @@ def addTopic():
 
 @app.route('/adminUsers')
 def adminUsers():
-    return render_template('adminUsers.html', currentPage='adminUsers', **sessionInfo)
+    sql = "SELECT Username From user"
+    tupleCursor.execute(sql)
+    listOfUsernames = tupleCursor.fetchall()
+    print(listOfUsernames)
+    return render_template('adminUsers.html', currentPage='adminUsers', **sessionInfo, listOfUsernames = listOfUsernames)
 if __name__ == "__main__":
     app.run(debug=True)
