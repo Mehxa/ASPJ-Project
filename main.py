@@ -3,11 +3,12 @@ import mysql.connector, re
 import Forms
 from datetime import datetime
 # Flask mail
+import os
 from flask_mail import Mail, Message
 import sys
 import asyncio
 from threading import Thread
-import os
+
 
 db = mysql.connector.connect(
     host="localhost",
@@ -33,8 +34,9 @@ app.config.update(
 	MAIL_SUPPRESS_SEND = False,
     MAIL_ASCII_ATTACHMENTS = True
 	)
-app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 
+app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
+mail = Mail(app)
 """ For testing purposes only. To make it convenient cause I can't remember all the account names.
 Uncomment the account that you would like to use. To run the program as not logged in, run the first one."""
 # sessionInfo = {'login': False, 'currentUserID': 0, 'username': '', 'isAdmin': 0}
@@ -340,6 +342,14 @@ def profile(username):
 
     return render_template('profile.html', currentPage='myProfile', **sessionInfo, userData=userData, recentPosts=recentPosts, updateProfileForm=updateProfileForm)
 
+@app.route('/topics')
+def topics():
+    # uncomment from here
+    sql = "SELECT Content FROM topic ORDER BY Content ASC LIMIT 15"
+    tupleCursor.execute(sql)
+    listOfTopics = tupleCursor.fetchall()
+    return render_template('topics.html', currentPage='topics', **sessionInfo, listOfTopics=listOfTopics)
+
 @app.route('/adminProfile/<username>', methods=["GET", "POST"])
 def adminUserProfile(username):
     sql = "SELECT * FROM user WHERE user.Username='" + str(username) + "'"
@@ -425,45 +435,53 @@ def adminUsers():
 
 @app.route('/adminDeleteUser/<username>', methods=['POST'])
 def deleteUser(username):
+    user_email = "SELECT Email FROM user WHERE user.username='"+username+"'"
+    tupleCursor.execute(user_email)
     sql = "DELETE FROM user WHERE user.username= '"+username+"'"
     tupleCursor.execute(sql)
+    try:
+        msg = Message("Lorem Ipsum",
+            sender="deloremipsumonlinestore@outlook.com",
+            recipients=[user_email[0]])
+        print("testinggggggggggggggg")
+        msg.body = "Your account has been terminated"
+        msg.html = render_template('email.html', postID=0, username=username, content=0, posted=0)
+        mail.send(msg)
+        print("\n\n\nMAIL SENT\n\n\n")
+    except Exception as e:
+        print(e)
+        print("Error:", sys.exc_info()[0])
+        print("goes into except")
+
     return redirect('/adminUsers')
 
 @app.route('/adminDeletePost/<postID>', methods=['POST'])
 def deletePost(postID):
+    sql = "SELECT post.Content, post.DatetimePosted, post.postID, user.Username, user.email "
+    sql += "FROM post"
+    sql+= " INNER JOIN user ON post.UserID = user.UserID"
+    sql += " WHERE post.PostID = " + str(postID)
+    dictCursor.execute(sql)
+    email_info = dictCursor.fetchall()
+    print(email_info)
     sql = "DELETE FROM post WHERE post.PostID= '"+postID+"'"
     tupleCursor.execute(sql)
+    try:
+        msg = Message("Lorem Ipsum",
+            sender="deloremipsumonlinestore@outlook.com",
+            recipients=[email_info[0]['email']])
+        print("testinggggggggggggggg")
+        msg.body = "Your post has been deleted"
+        for info in email_info:
+            msg.html = render_template('email.html', postID=postID, username=info['Username'], content=info['Content'], posted=info['DatetimePosted'])
+            mail.send(msg)
+        print("\n\n\nMAIL SENT\n\n\n")
+    except Exception as e:
+        print(e)
+        print("Error:", sys.exc_info()[0])
+        print("goes into except")
+
     return redirect('/adminUsers')
 
-# @app.route('/email/<username>/<post>')
-# def email(username, post):
-#     user_email = "SELECT Email From user where user.username= '"+username+"'"
-#     tupleCursor.execute(user_email)
-#     #send email for post deleted or account terminated
-#     try:
-#         msg = Message("Lorem Ipsum",
-#             sender="deloremipsumonlinestore@outlook.com",
-#             recipients=[user_email])
-#         print("testinggggggggggggggg")
-#         if post != 0:
-#             msg.body = "Your post has been deleted"
-#             sql = "SELECT Content From post where post.Content='"+post+"'"
-#             sql += "SELECT DatetimePosted From post where post.Content='"+post+"'"
-#             tupleCursor.execute(sql)
-#         else:
-#             msg.body = "Your account has been terminated"
-#             sql = 0
-#         msg.html = render_template('email.html', post=post, sql=sql, username=username)
-#
-#
-#         mail.send(msg)
-#         print("\n\n\nMAIL SENT\n\n\n")
-#
-#     except Exception as e:
-#         print(e)
-#         print("Error:", sys.exc_info()[0])
-#         print("goes into except")
-#
-#     return redirect(url_for('adminProfile.html', username=username)
 if __name__ == "__main__":
     app.run(debug=True)
