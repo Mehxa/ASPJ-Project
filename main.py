@@ -300,14 +300,15 @@ def profile(username):
         post['Content'] = post['Content'][:200]
 
     if request.method == "POST" and updateProfileForm.validate():
-        sql = "UPDATE user"
-        sql += "SET Username='" + updateProfileForm.username.data + "'"
-        sql += "Password='" + updateProfileForm.password.data + "'"
-        sql += "Name='" + updateProfileForm.name.data + "'"
-        sql += "Email='" + updateProfileForm.email.data + "'"
-        sql += "Status='" + updateProfileForm.status.data + "'"
+        oldUserID = sessionInfo['currentUserID']
+        sql = "UPDATE user "
+        sql += "SET Username='" + updateProfileForm.username.data + "',"
+        sql += "Password='" + updateProfileForm.password.data + "',"
+        sql += "Name='" + updateProfileForm.name.data + "',"
+        sql += "Email='" + updateProfileForm.email.data + "',"
+        sql += "Status='" + updateProfileForm.status.data + "',"
         sql += "Birthday='" + str(updateProfileForm.dob.data) + "'"
-        sql += "WHERE UserID='" + sessionInfo['currentUserID'] + "'"
+        sql += "WHERE UserID='" + str(sessionInfo['currentUserID']) + "'"
         try:
             tupleCursor.execute(sql)
             db.commit()
@@ -328,7 +329,11 @@ def profile(username):
             sessionInfo['currentUserID'] = int(findUser[0])
             sessionInfo['username'] = findUser[1]
 
-            flash('Account successfully updated! You are now logged in as %s.' %(sessionInfo['username']), 'success')
+            if sessionInfo['currentUserID'] != oldUserID:
+                flash('Account successfully updated! Your username now is %s.' %(sessionInfo['username']), 'success')
+            else:
+                flash('Account successfully updated!', 'success')
+
             return redirect('/profile/' + sessionInfo['username'])
 
 

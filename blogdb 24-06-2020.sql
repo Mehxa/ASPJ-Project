@@ -1,4 +1,4 @@
-CREATE DATABASE  IF NOT EXISTS `blogdb` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+CREATE DATABASE  IF NOT EXISTS `blogdb` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 USE `blogdb`;
 -- MySQL dump 10.13  Distrib 8.0.20, for Win64 (x86_64)
 --
@@ -38,7 +38,7 @@ CREATE TABLE `comment` (
   KEY `fk_comment_UserID_idx` (`UserID`),
   CONSTRAINT `fk_comment_PostID` FOREIGN KEY (`PostID`) REFERENCES `post` (`PostID`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_comment_UserID` FOREIGN KEY (`UserID`) REFERENCES `user` (`UserID`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -65,7 +65,7 @@ CREATE TABLE `comment_votes` (
   KEY `fk_comment_votes_CommentID_idx` (`CommentID`),
   CONSTRAINT `fk_comment_votes_CommentID` FOREIGN KEY (`CommentID`) REFERENCES `comment` (`CommentID`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_comment_votes_UserID` FOREIGN KEY (`UserID`) REFERENCES `user` (`UserID`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -95,7 +95,7 @@ CREATE TABLE `feedback` (
   UNIQUE KEY `DatetimePosted_UNIQUE` (`DatetimePosted`),
   KEY `fk_feedback_UserID_idx` (`UserID`),
   CONSTRAINT `fk_feedback_UserID` FOREIGN KEY (`UserID`) REFERENCES `user` (`UserID`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -129,7 +129,7 @@ CREATE TABLE `post` (
   KEY `fk_post_UserID_idx` (`UserID`),
   CONSTRAINT `fk_post_TopicID` FOREIGN KEY (`TopicID`) REFERENCES `topic` (`TopicID`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_post_UserID` FOREIGN KEY (`UserID`) REFERENCES `user` (`UserID`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -157,7 +157,7 @@ CREATE TABLE `post_votes` (
   KEY `fk_votes_PostID_idx` (`PostID`),
   CONSTRAINT `fk_post_votes_PostID` FOREIGN KEY (`PostID`) REFERENCES `post` (`PostID`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_post_votes_UserID` FOREIGN KEY (`UserID`) REFERENCES `user` (`UserID`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -187,7 +187,7 @@ CREATE TABLE `reply` (
   KEY `fk_reply_UserID_idx` (`UserID`),
   CONSTRAINT `fk_reply_CommentID` FOREIGN KEY (`CommentID`) REFERENCES `comment` (`CommentID`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_reply_UserID` FOREIGN KEY (`UserID`) REFERENCES `user` (`UserID`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -216,7 +216,7 @@ CREATE TABLE `topic` (
   UNIQUE KEY `DatetimePosted_UNIQUE` (`DatetimePosted`),
   KEY `fk_topic_UserID_idx` (`UserID`),
   CONSTRAINT `fk_topic_UserID` FOREIGN KEY (`UserID`) REFERENCES `user` (`UserID`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -249,7 +249,7 @@ CREATE TABLE `user` (
   UNIQUE KEY `UserID_UNIQUE` (`UserID`),
   UNIQUE KEY `Email_UNIQUE` (`Email`),
   UNIQUE KEY `Username_UNIQUE` (`Username`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -258,7 +258,7 @@ CREATE TABLE `user` (
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` VALUES (1,'Jams','jams@lorem-ipsum.com','NotABot','NotABot123',NULL,'0000-00-00',1),(2,'Siti Sarah','sitisarah@lorem-ipsum.com','CoffeeGirl','CoffeeGirl123',NULL,'2002-02-14',1),(3,'Muhammad','muhammad@lorem-ipsum.com','Mexha','Mexha123',NULL,'2002-03-15',1),(4,'Ko Jia Ling','kojialing@lorem-ipsum.com','Kobot','Kobot123',NULL,'2003-01-01',1),(6,'Coco Mak','coconutmak@gmail.com','theauthenticcoconut','nuts@coco',NULL,'2001-02-28',0),(7,'Johnathan Tay Wei Jun','john2004@gmail.com','johnnyjohnny','hohohomerrychristmas',NULL,'1997-10-03',0),(9,'Alexander Han','hansolo02@live.com','hanbaobao','burgerking02',NULL,'1998-01-30',0);
+INSERT INTO `user` VALUES (1,'Jams','jams@lorem-ipsum.com','NotABot','NotABot123',NULL,'0000-00-00',1),(2,'Siti Sarah','sitisarah@lorem-ipsum.com','CoffeeGirl','CoffeeGirl123',NULL,'2002-02-14',1),(3,'Muhammad','muhammad@lorem-ipsum.com','Mehxa','Mehxa123',NULL,'2002-03-15',1),(4,'Ko Jia Ling','kojialing@lorem-ipsum.com','Kobot','Kobot123',NULL,'2003-01-01',1),(6,'Coco Mak','coconutmak@gmail.com','theauthenticcoconut','nuts@coco',NULL,'2001-02-28',0),(7,'Johnathan Tay Wei Jun','john2004@gmail.com','johnnyjohnny','hohohomerrychristmas',NULL,'1997-10-03',0),(9,'Alexander Han','hansolo02@live.com','hanbaobao','burgerking02',NULL,'1998-01-30',0);
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
