@@ -490,6 +490,16 @@ def deletePost(postID):
         print("goes into except")
 
     return redirect('/adminUsers')
+@app.route('/adminFeedback')
+def adminFeedback():
+    sql = "SELECT feedback.Content, feedback.DatetimePosted, feedback.Reason, user.Username "
+    sql += "FROM feedback"
+    sql+= " INNER JOIN user ON feedback.UserID = user.UserID"
+    dictCursor.execute(sql)
+    feedbackList = dictCursor.fetchall()
+    print(feedbackList)
+    return render_template('adminFeedback.html', currentPage='adminFeedback', **sessionInfo, feedbackList=feedbackList)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
