@@ -372,8 +372,13 @@ def adminUserProfile(username):
         post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
         userData['Credibility'] += post['TotalVotes']
         post['Content'] = post['Content'][:200]
+    sql = "SELECT UserID, Username, isAdmin FROM user WHERE"
+    sql += " Username='" + str(username) + "'"
+    dictCursor.execute(sql)
+    user = dictCursor.fetchone()
+    admin = user['isAdmin']
 
-    return render_template("adminProfile.html", currentPage = "myProfile", **sessionInfo, userData = userData, recentPosts = recentPosts)
+    return render_template("adminProfile.html", currentPage = "myProfile", **sessionInfo, userData = userData, recentPosts = recentPosts, admin=admin)
 
 
 

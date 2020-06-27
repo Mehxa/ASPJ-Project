@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "adminBase.html" %}
 {% block title %}Login{% endblock %}
 {% block style %}
 <link rel="stylesheet" type="text/css" href="/static/styles/profile.css">
@@ -50,9 +50,11 @@
 
 
     <div class="text-center">
+      {%if not admin%}
       <form method = "POST" action="/adminDeleteUser/{{userData['Username']}}">
       <button type="submit" class="btn btn-danger" >Delete User</button>
       </form>
+      {%endif%}
     </div>
   </div>
 </div>
