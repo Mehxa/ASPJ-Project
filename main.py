@@ -2,6 +2,12 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 import mysql.connector, re
 import Forms
 from datetime import datetime
+# Flask mail
+from flask_mail import Mail, Message
+import sys
+import asyncio
+from threading import Thread
+import os
 
 db = mysql.connector.connect(
     host="localhost",
@@ -16,6 +22,17 @@ tupleCursor.execute("SHOW TABLES")
 print(tupleCursor)
 
 app = Flask(__name__)
+app.config.update(
+    MAIL_SERVER= 'smtp.office365.com',
+    MAIL_PORT= 587,
+    MAIL_USE_TLS= True,
+    MAIL_USE_SSL= False,
+	MAIL_USERNAME = 'deloremipsumonlinestore@outlook.com',
+	# MAIL_PASSWORD = os.environ["MAIL_PASSWORD"],
+	MAIL_DEBUG = True,
+	MAIL_SUPPRESS_SEND = False,
+    MAIL_ASCII_ATTACHMENTS = True
+	)
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 
 """ For testing purposes only. To make it convenient cause I can't remember all the account names.
@@ -360,11 +377,7 @@ def adminHome():
 @app.route('/adminTopics')
 def adminTopics():
     # uncomment from here
-<<<<<<< HEAD
-    sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
-=======
     sql = "SELECT Content FROM topic ORDER BY Content ASC LIMIT 15"
->>>>>>> admin_27/6
     tupleCursor.execute(sql)
     listOfTopics = tupleCursor.fetchall()
     return render_template('adminTopics.html', currentPage='adminTopics', **sessionInfo, listOfTopics=listOfTopics)
@@ -376,20 +389,6 @@ def addTopic():
     if not sessionInfo['login']:
         return redirect('/login')
     # til here
-<<<<<<< HEAD
-    sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
-    tupleCursor.execute(sql)
-    listOfTopics = tupleCursor.fetchall()
-
-    # uncomment here
-    topicForm = Forms.TopicForm(request.form)
-    topicForm.topic.choices = listOfTopics
-    # uncomment here
-    if request.method == 'POST' and postForm.validate():
-        dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
-        sql = 'INSERT INTO topic (TopicID, UserID, Content, DateTimePosted) VALUES (%s, %s, %s, %s)'
-        val = ("need to generate?", sessionInfo['currentUserID'],topicForm.topic.data, dateTime)
-=======
     sql = "SELECT Content FROM topic ORDER BY Content"
 
     tupleCursor.execute(sql)
@@ -402,7 +401,6 @@ def addTopic():
         dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
         sql = 'INSERT INTO topic ( UserID, Content, DateTimePosted) VALUES ( %s,%s, %s)'
         val = (sessionInfo["currentUserID"],topicForm.topic.data, dateTime)
->>>>>>> admin_27/6
         tupleCursor.execute(sql, val)
         db.commit()
         flash('Topic successfully created!', 'success')
@@ -426,5 +424,41 @@ def deleteUser(username):
     tupleCursor.execute(sql)
     return redirect('/adminUsers')
 
+@app.route('/adminDeletePost/<postID>', methods=['POST'])
+def deletePost(postID):
+    sql = "DELETE FROM post WHERE post.PostID= '"+postID+"'"
+    tupleCursor.execute(sql)
+    return redirect('/adminUsers')
+
+# @app.route('/email/<username>/<post>')
+# def email(username, post):
+#     user_email = "SELECT Email From user where user.username= '"+username+"'"
+#     tupleCursor.execute(user_email)
+#     #send email for post deleted or account terminated
+#     try:
+#         msg = Message("Lorem Ipsum",
+#             sender="deloremipsumonlinestore@outlook.com",
+#             recipients=[user_email])
+#         print("testinggggggggggggggg")
+#         if post != 0:
+#             msg.body = "Your post has been deleted"
+#             sql = "SELECT Content From post where post.Content='"+post+"'"
+#             sql += "SELECT DatetimePosted From post where post.Content='"+post+"'"
+#             tupleCursor.execute(sql)
+#         else:
+#             msg.body = "Your account has been terminated"
+#             sql = 0
+#         msg.html = render_template('email.html', post=post, sql=sql, username=username)
+#
+#
+#         mail.send(msg)
+#         print("\n\n\nMAIL SENT\n\n\n")
+#
+#     except Exception as e:
+#         print(e)
+#         print("Error:", sys.exc_info()[0])
+#         print("goes into except")
+#
+#     return redirect(url_for('adminProfile.html', username=username)
 if __name__ == "__main__":
     app.run(debug=True)
