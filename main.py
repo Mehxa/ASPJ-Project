@@ -29,7 +29,7 @@ app.config.update(
     MAIL_USE_TLS= True,
     MAIL_USE_SSL= False,
 	MAIL_USERNAME = 'deloremipsumonlinestore@outlook.com',
-	# MAIL_PASSWORD = os.environ["MAIL_PASSWORD"],
+	MAIL_PASSWORD = os.environ["MAIL_PASSWORD"],
 	MAIL_DEBUG = True,
 	MAIL_SUPPRESS_SEND = False,
     MAIL_ASCII_ATTACHMENTS = True
@@ -39,10 +39,10 @@ app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 mail = Mail(app)
 """ For testing purposes only. To make it convenient cause I can't remember all the account names.
 Uncomment the account that you would like to use. To run the program as not logged in, run the first one."""
-# sessionInfo = {'login': False, 'currentUserID': 0, 'username': '', 'isAdmin': 0}
+sessionInfo = {'login': False, 'currentUserID': 0, 'username': '', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 1, 'username': 'NotABot', 'isAdmin': 1}
 # sessionInfo = {'login': True, 'currentUserID': 2, 'username': 'CoffeeGirl', 'isAdmin': 1}
-sessionInfo = {'login': True, 'currentUserID': 3, 'username': 'Mehxa', 'isAdmin': 1}
+# sessionInfo = {'login': True, 'currentUserID': 3, 'username': 'Mehxa', 'isAdmin': 1}
 # sessionInfo = {'login': True, 'currentUserID': 4, 'username': 'Kobot', 'isAdmin': 1}
 # sessionInfo = {'login': True, 'currentUserID': 5, 'username': 'MarySinceBirthButStillSingle', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 6, 'username': 'theauthenticcoconut', 'isAdmin': 0}
@@ -231,7 +231,10 @@ def login():
             sessionInfo['username'] = findUser['Username']
             sessionInfo['isAdmin'] = findUser['isAdmin']
             flash('Welcome! You are now logged in as %s.' %(sessionInfo['username']), 'success')
-            return redirect('/home') # Change this later to redirect to profile page
+            if sessionInfo['isAdmin']:
+                return redirect('/adminHome')
+            else:
+                return redirect('/home') # Change this later to redirect to profile page
 
     return render_template('login.html', currentPage='login', **sessionInfo, loginForm = loginForm)
 
