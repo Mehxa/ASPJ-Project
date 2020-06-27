@@ -348,7 +348,7 @@ def profile(username):
 @app.route('/topics')
 def topics():
     # uncomment from here
-    sql = "SELECT Content FROM topic ORDER BY Content ASC LIMIT 15"
+    sql = "SELECT Content FROM topic ORDER BY Content "
     tupleCursor.execute(sql)
     listOfTopics = tupleCursor.fetchall()
     return render_template('topics.html', currentPage='topics', **sessionInfo, listOfTopics=listOfTopics)
@@ -400,7 +400,7 @@ def adminHome():
 @app.route('/adminTopics')
 def adminTopics():
     # uncomment from here
-    sql = "SELECT Content FROM topic ORDER BY Content ASC LIMIT 15"
+    sql = "SELECT Content FROM topic ORDER BY Content "
     tupleCursor.execute(sql)
     listOfTopics = tupleCursor.fetchall()
     return render_template('adminTopics.html', currentPage='adminTopics', **sessionInfo, listOfTopics=listOfTopics)
