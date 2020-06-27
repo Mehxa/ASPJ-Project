@@ -7,6 +7,7 @@
 {% endblock %}
 
 {% block content %}
+{% from "includes/_formhelper.html" import render_field %}
 <div class="container my-4">
   <div class="col-md-5 profilebg mx-auto">
     <p class="profile-title my-3 text-center">{{userData['Username']}}'s Profile</p>
@@ -82,9 +83,6 @@
     </div>
     {% endif %}
     {% else %}
-    <div class="text-center">
-      <button type="submit" class="btn btn-success">Edit Profile</button>
-    </div>
   </div>
   {% if recentPosts == [] %}
   <p class="profile-title text-center my-5">{{userData['Username']}} has not posted anything</p>
@@ -121,10 +119,43 @@
     <div class="modal-content">
       <div class="modal-header">
         <h4 class="modal-title">Update</h4>
-        <button type="button" class="close" data-dismiss="modal">&times;</button>  
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
       </div>
       <div class="modal-body">
-        <p>Some text in the modal.</p>
+        <form method="POST" class="mt-4">
+          <div class="form-group">
+            {{render_field(updateProfileForm.email, class= "form-control", value=userData['Email'])}}
+          </div>
+
+          <div class="form-group">
+            {{render_field(updateProfileForm.username, class= "form-control", value=userData['Username'])}}
+          </div>
+
+          <div class="form-group">
+            {{render_field(updateProfileForm.name, class= "form-control", value=userData['Name'])}}
+          </div>
+
+          <div class="form-group">
+            {{render_field(updateProfileForm.dob, class= "form-control", type="date", value=userData['Birthday'])}}
+          </div>
+
+          <div class="form-group">
+            {{render_field(updateProfileForm.status, class= "form-control", value=userData['Status'])}}
+          </div>
+
+          <div class="form-group">
+            {{render_field(updateProfileForm.password, class= "form-control", value=userData['Password'])}}
+            <p>{{userData['Password']}}</p>
+          </div>
+
+          <div class="form-group">
+            {{render_field(updateProfileForm.confirmPassword, class= "form-control", value=userData['Password'])}}
+          </div>
+
+          <div class="form-group">
+            <input type="submit" class="btn btn-success">
+          </div>
+        </form>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
