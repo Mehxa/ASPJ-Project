@@ -1,0 +1,15 @@
+{% extends "adminBase.html" %}
+{% block title %}Delivery invoice{% endblock %}
+
+{% block content %}
+<div>
+  <p>Dear {{username}}</p>
+  {%if post != 0%}
+  <p>On {{sql[1]}}, you made the folowing post:</p>
+  <p>{{sql[0]}}</p>
+  <p>Your post has  been removed due to communiy guidelines.</p>
+  {%else%}
+  <p>Your account has been terminated</p>
+</div>
+
+{% endblock %}

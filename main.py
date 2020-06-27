@@ -2,6 +2,12 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 import mysql.connector, re
 import Forms
 from datetime import datetime
+# Flask mail
+from flask_mail import Mail, Message
+import sys
+import asyncio
+from threading import Thread
+import os
 
 db = mysql.connector.connect(
     host="localhost",
@@ -16,6 +22,17 @@ tupleCursor.execute("SHOW TABLES")
 print(tupleCursor)
 
 app = Flask(__name__)
+app.config.update(
+    MAIL_SERVER= 'smtp.office365.com',
+    MAIL_PORT= 587,
+    MAIL_USE_TLS= True,
+    MAIL_USE_SSL= False,
+	MAIL_USERNAME = 'deloremipsumonlinestore@outlook.com',
+	# MAIL_PASSWORD = os.environ["MAIL_PASSWORD"],
+	MAIL_DEBUG = True,
+	MAIL_SUPPRESS_SEND = False,
+    MAIL_ASCII_ATTACHMENTS = True
+	)
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 
 """ For testing purposes only. To make it convenient cause I can't remember all the account names.
@@ -318,36 +335,72 @@ def profile(username):
 
     return render_template('profile.html', currentPage='myProfile', **sessionInfo, userData=userData, recentPosts=recentPosts, updateProfileForm=updateProfileForm)
 
+@app.route('/adminProfile/<username>', methods=["GET", "POST"])
+def adminUserProfile(username):
+    sql = "SELECT * FROM user WHERE user.Username='" + str(username) + "'"
+    dictCursor.execute(sql)
+    userData = dictCursor.fetchone()
+    sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
+    sql += " INNER JOIN user ON post.UserID=user.UserID"
+    sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
+    sql += " WHERE user.Username='" + str(username) + "'"
+    sql += " ORDER BY post.PostID DESC LIMIT 6"
+    dictCursor.execute(sql)
+    recentPosts = dictCursor.fetchall()
+    userData['Credibility'] = 0
+    if userData['Status'] == None:
+        userData['Status'] = userData['Username'] + " is too lazy to add a status"
+    for post in recentPosts:
+        post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
+        userData['Credibility'] += post['TotalVotes']
+        post['Content'] = post['Content'][:200]
+
+    return render_template("adminProfile.html", currentPage = "myProfile", **sessionInfo, userData = userData, recentPosts = recentPosts)
+
+
+
 @app.route('/adminHome')
 def adminHome():
-    return render_template('adminHome.html', currentPage='adminHome', **sessionInfo)
+    sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
+    sql += " INNER JOIN user ON post.UserID=user.UserID"
+    sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
+    sql += " ORDER BY post.PostID DESC LIMIT 6"
+
+    dictCursor.execute(sql)
+    recentPosts = dictCursor.fetchall()
+    for post in recentPosts:
+        post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
+        post['Content'] = post['Content'][:200]
+
+    return render_template('adminHome.html', currentPage='adminHome', **sessionInfo, recentPosts = recentPosts)
 
 @app.route('/adminTopics')
 def adminTopics():
     # uncomment from here
-    sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
+    sql = "SELECT Content FROM topic ORDER BY Content ASC LIMIT 15"
     tupleCursor.execute(sql)
     listOfTopics = tupleCursor.fetchall()
     return render_template('adminTopics.html', currentPage='adminTopics', **sessionInfo, listOfTopics=listOfTopics)
 
 @app.route('/addTopic', methods=["GET", "POST"])
 def addTopic():
+
     # uncomment here
     if not sessionInfo['login']:
         return redirect('/login')
     # til here
-    sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
+    sql = "SELECT Content FROM topic ORDER BY Content"
+
     tupleCursor.execute(sql)
     listOfTopics = tupleCursor.fetchall()
 
-    # uncomment here
     topicForm = Forms.TopicForm(request.form)
     topicForm.topic.choices = listOfTopics
     # uncomment here
-    if request.method == 'POST' and postForm.validate():
+    if request.method == 'POST' and topicForm.validate():
         dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
-        sql = 'INSERT INTO topic (TopicID, UserID, Content, DateTimePosted) VALUES (%s, %s, %s, %s)'
-        val = ("need to generate?", sessionInfo['currentUserID'],topicForm.topic.data, dateTime)
+        sql = 'INSERT INTO topic ( UserID, Content, DateTimePosted) VALUES ( %s,%s, %s)'
+        val = (sessionInfo["currentUserID"],topicForm.topic.data, dateTime)
         tupleCursor.execute(sql, val)
         db.commit()
         flash('Topic successfully created!', 'success')
@@ -359,6 +412,53 @@ def addTopic():
 
 @app.route('/adminUsers')
 def adminUsers():
-    return render_template('adminUsers.html', currentPage='adminUsers', **sessionInfo)
+    sql = "SELECT Username From user"
+    tupleCursor.execute(sql)
+    listOfUsernames = tupleCursor.fetchall()
+    print(listOfUsernames)
+    return render_template('adminUsers.html', currentPage='adminUsers', **sessionInfo, listOfUsernames = listOfUsernames)
+
+@app.route('/adminDeleteUser/<username>', methods=['POST'])
+def deleteUser(username):
+    sql = "DELETE FROM user WHERE user.username= '"+username+"'"
+    tupleCursor.execute(sql)
+    return redirect('/adminUsers')
+
+@app.route('/adminDeletePost/<postID>', methods=['POST'])
+def deletePost(postID):
+    sql = "DELETE FROM post WHERE post.PostID= '"+postID+"'"
+    tupleCursor.execute(sql)
+    return redirect('/adminUsers')
+
+# @app.route('/email/<username>/<post>')
+# def email(username, post):
+#     user_email = "SELECT Email From user where user.username= '"+username+"'"
+#     tupleCursor.execute(user_email)
+#     #send email for post deleted or account terminated
+#     try:
+#         msg = Message("Lorem Ipsum",
+#             sender="deloremipsumonlinestore@outlook.com",
+#             recipients=[user_email])
+#         print("testinggggggggggggggg")
+#         if post != 0:
+#             msg.body = "Your post has been deleted"
+#             sql = "SELECT Content From post where post.Content='"+post+"'"
+#             sql += "SELECT DatetimePosted From post where post.Content='"+post+"'"
+#             tupleCursor.execute(sql)
+#         else:
+#             msg.body = "Your account has been terminated"
+#             sql = 0
+#         msg.html = render_template('email.html', post=post, sql=sql, username=username)
+#
+#
+#         mail.send(msg)
+#         print("\n\n\nMAIL SENT\n\n\n")
+#
+#     except Exception as e:
+#         print(e)
+#         print("Error:", sys.exc_info()[0])
+#         print("goes into except")
+#
+#     return redirect(url_for('adminProfile.html', username=username)
 if __name__ == "__main__":
     app.run(debug=True)
