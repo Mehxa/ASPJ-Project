@@ -453,7 +453,7 @@ def deleteUser(username):
             recipients=[user_email[0]])
         print("testinggggggggggggggg")
         msg.body = "Your account has been terminated"
-        msg.html = render_template('email.html', postID=0, username=username, content=0, posted=0)
+        msg.html = render_template('email.html', postID="delete user", username=username, content=0, posted=0)
         mail.send(msg)
         print("\n\n\nMAIL SENT\n\n\n")
     except Exception as e:
@@ -492,7 +492,7 @@ def deletePost(postID):
     return redirect('/adminUsers')
 @app.route('/adminFeedback')
 def adminFeedback():
-    sql = "SELECT feedback.Content, feedback.DatetimePosted, feedback.Reason, user.Username "
+    sql = "SELECT feedback.Content, feedback.DatetimePosted, feedback.Reason,feedback.FeedbackID, user.Username, user.Email "
     sql += "FROM feedback"
     sql+= " INNER JOIN user ON feedback.UserID = user.UserID"
     dictCursor.execute(sql)
@@ -500,6 +500,36 @@ def adminFeedback():
     print(feedbackList)
     return render_template('adminFeedback.html', currentPage='adminFeedback', **sessionInfo, feedbackList=feedbackList)
 
+@app.route('/replyFeedback/<feedbackID>',methods=["GET","POST"])
+def replyFeedback(feedbackID):
+    sql = "SELECT feedback.Content, feedback.DatetimePosted, feedback.Reason,feedback.FeedbackID, user.Username, user.Email "
+    sql += "FROM feedback"
+    sql+= " INNER JOIN user ON feedback.UserID = user.UserID"
+    sql += " WHERE feedback.FeedbackID = " + str(feedbackID)
+    dictCursor.execute(sql)
+    feedbackList = dictCursor.fetchall()
+    print(feedbackList)
+    replyForm = Forms.ReplyFeedbackForm(request.form)
+    # uncomment here
+    if request.method == 'POST' and replyForm.validate():
+        reply=replyForm.reply.data
+        email=feedbackList[0]['Email']
+        print(email)
+        try:
+            msg = Message("Lorem Ipsum",
+                sender="deloremipsumonlinestore@outlook.com",
+                recipients=[email])
+            print("testinggggggggggggggg")
+            msg.body = "We love your feedback!"
+            msg.html = render_template('email.html', postID="feedback reply", username=feedbackList[0]['Username'], content=feedbackList[0]['Content'], posted=feedbackList[0]['DatetimePosted'], reply=reply)
+            mail.send(msg)
+            print("\n\n\nMAIL SENT\n\n\n")
+        except Exception as e:
+            print(e)
+            print("Error:", sys.exc_info()[0])
+            print("goes into except")
+        return redirect('/adminFeedback')
+    return render_template('replyFeedback.html', currentPage='replyFeedback', **sessionInfo,replyForm=replyForm, feedbackList=feedbackList)
 
 if __name__ == "__main__":
     app.run(debug=True)
