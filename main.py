@@ -29,7 +29,7 @@ app.config.update(
     MAIL_USE_TLS= True,
     MAIL_USE_SSL= False,
 	MAIL_USERNAME = 'deloremipsumonlinestore@outlook.com',
-	# MAIL_PASSWORD = os.environ["MAIL_PASSWORD"],
+	MAIL_PASSWORD = os.environ["MAIL_PASSWORD"],
 	MAIL_DEBUG = True,
 	MAIL_SUPPRESS_SEND = False,
     MAIL_ASCII_ATTACHMENTS = True
@@ -69,7 +69,7 @@ def home():
     if request.method == 'POST' and searchBarForm.validate():
         return redirect(url_for('searchPosts', searchQuery = searchBarForm.searchQuery.data, topic = searchBarForm.topic.data))
 
-    sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
+    sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, post.TopicID, user.Username, topic.Content AS Topic FROM post"
     sql += " INNER JOIN user ON post.UserID=user.UserID"
     sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
     sql += " ORDER BY post.PostID DESC LIMIT 6"
@@ -348,10 +348,27 @@ def profile(username):
 @app.route('/topics')
 def topics():
     # uncomment from here
-    sql = "SELECT Content FROM topic ORDER BY Content "
+    sql = "SELECT Content,TopicID FROM topic ORDER BY Content "
     tupleCursor.execute(sql)
     listOfTopics = tupleCursor.fetchall()
     return render_template('topics.html', currentPage='topics', **sessionInfo, listOfTopics=listOfTopics)
+
+@app.route('/indivTopic/<topicID>', methods=["GET", "POST"])
+def indivTopic(topicID):
+    sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
+    sql += " INNER JOIN user ON post.UserID=user.UserID"
+    sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
+    sql += " WHERE topic.TopicID = " + str(topicID)
+
+    dictCursor.execute(sql)
+    recentPosts = dictCursor.fetchall()
+    for post in recentPosts:
+        post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
+        post['Content'] = post['Content'][:200]
+    topic = "SELECT Content FROM topic WHERE topic.TopicID=" + str(topicID)
+    tupleCursor.execute(topic)
+    topic=tupleCursor.fetchone()
+    return render_template('indivTopic.html', currentPage='indivTopic', **sessionInfo, recentPosts=recentPosts, topic = topic[0])
 
 @app.route('/adminProfile/<username>', methods=["GET", "POST"])
 def adminUserProfile(username):
@@ -384,6 +401,11 @@ def adminUserProfile(username):
 
 @app.route('/adminHome')
 def adminHome():
+    searchBarForm = Forms.SearchBarForm(request.form)
+    searchBarForm.topic.choices = get_all_topics('all')
+    if request.method == 'POST' and searchBarForm.validate():
+        return redirect(url_for('searchPosts', searchQuery = searchBarForm.searchQuery.data, topic = searchBarForm.topic.data))
+
     sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
     sql += " INNER JOIN user ON post.UserID=user.UserID"
     sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
@@ -395,15 +417,60 @@ def adminHome():
         post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
         post['Content'] = post['Content'][:200]
 
-    return render_template('adminHome.html', currentPage='adminHome', **sessionInfo, recentPosts = recentPosts)
+    return render_template('adminHome.html', currentPage='adminHome', **sessionInfo, searchBarForm = searchBarForm,recentPosts = recentPosts)
+
+@app.route('/adminViewPost/<int:postID>', methods=["GET", "POST"])
+def adminViewPost(postID):
+
+    sql = "SELECT post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted,post.TopicID,post.PostID, user.Username, topic.Content AS Topic FROM post"
+    sql += " INNER JOIN user ON post.UserID=user.UserID"
+    sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
+    sql += " WHERE PostID=" + str(postID)
+    dictCursor.execute(sql)
+    post = dictCursor.fetchone()
+    post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
+
+    sql = "SELECT comment.CommentID, comment.Content, comment.DatetimePosted, comment.Upvotes, comment.Downvotes, comment.DatetimePosted, user.Username FROM comment"
+    sql += " INNER JOIN user ON comment.UserID=user.UserID"
+    sql += " WHERE comment.PostID=" + str(postID)
+    dictCursor.execute(sql)
+    commentList = dictCursor.fetchall()
+    for comment in commentList:
+        comment['TotalVotes'] = comment['Upvotes'] - comment['Downvotes']
+
+        sql = "SELECT reply.Content, reply.DatetimePosted, reply.DatetimePosted, user.Username FROM reply"
+        sql += " INNER JOIN user ON reply.UserID=user.UserID"
+        sql += " WHERE reply.CommentID=" + str(comment['CommentID'])
+        dictCursor.execute(sql)
+        replyList = dictCursor.fetchall()
+        comment['ReplyList'] = replyList
+
+    return render_template('adminViewPost.html', currentPage='adminViewPost', **sessionInfo, post = post, commentList = commentList)
 
 @app.route('/adminTopics')
 def adminTopics():
     # uncomment from here
-    sql = "SELECT Content FROM topic ORDER BY Content "
+    sql = "SELECT Content,TopicID FROM topic ORDER BY Content "
     tupleCursor.execute(sql)
     listOfTopics = tupleCursor.fetchall()
     return render_template('adminTopics.html', currentPage='adminTopics', **sessionInfo, listOfTopics=listOfTopics)
+
+@app.route('/adminIndivTopic/<topicID>', methods=["GET", "POST"])
+def adminIndivTopic(topicID):
+    sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
+    sql += " INNER JOIN user ON post.UserID=user.UserID"
+    sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
+    sql += " WHERE topic.TopicID = " + str(topicID)
+
+    dictCursor.execute(sql)
+    recentPosts = dictCursor.fetchall()
+    for post in recentPosts:
+        post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
+        post['Content'] = post['Content'][:200]
+    topic = "SELECT Content FROM topic WHERE topic.TopicID=" + str(topicID)
+    tupleCursor.execute(topic)
+    topic=tupleCursor.fetchone()
+    return render_template('adminIndivTopic.html', currentPage='adminIndivTopic', **sessionInfo, recentPosts=recentPosts, topic=topic[0])
 
 @app.route('/addTopic', methods=["GET", "POST"])
 def addTopic():
@@ -489,7 +556,7 @@ def deletePost(postID):
         print("Error:", sys.exc_info()[0])
         print("goes into except")
 
-    return redirect('/adminUsers')
+    return redirect('/adminHome')
 @app.route('/adminFeedback')
 def adminFeedback():
     sql = "SELECT feedback.Content, feedback.DatetimePosted, feedback.Reason,feedback.FeedbackID, user.Username, user.Email "
