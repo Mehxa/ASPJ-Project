@@ -29,7 +29,7 @@ app.config.update(
     MAIL_USE_TLS= True,
     MAIL_USE_SSL= False,
 	MAIL_USERNAME = 'deloremipsumonlinestore@outlook.com',
-	MAIL_PASSWORD = os.environ["MAIL_PASSWORD"],
+	# MAIL_PASSWORD = os.environ["MAIL_PASSWORD"],
 	MAIL_DEBUG = True,
 	MAIL_SUPPRESS_SEND = False,
     MAIL_ASCII_ATTACHMENTS = True
@@ -46,7 +46,7 @@ sessionInfo = {'login': False, 'currentUserID': 0, 'username': '', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 4, 'username': 'Kobot', 'isAdmin': 1}
 # sessionInfo = {'login': True, 'currentUserID': 5, 'username': 'MarySinceBirthButStillSingle', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 6, 'username': 'theauthenticcoconut', 'isAdmin': 0}
-# sessionInfo = {'login': True, 'currentUserID': 7, 'username': 'johnnyjohnny', 'isAdmin': 0}
+sessionInfo = {'login': True, 'currentUserID': 7, 'username': 'johnnyjohnny', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 8, 'username': 'iamjeff', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 9, 'username': 'hanbaobao', 'isAdmin': 0}
 
@@ -144,14 +144,13 @@ def viewPost(postID):
 
     if request.method == 'POST' and commentForm.validate():
         dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
-        sql = "INSERT INTO comment (PostID, UserID, RepliedID, Content, DateTimePosted, Upvotes, Downvotes) VALUES"
+        sql = "INSERT INTO comment (PostID, UserID, Content, DateTimePosted, Upvotes, Downvotes) VALUES"
         sql += " ('" + str(postID) + "'"
         sql += " , '" + str(sessionInfo['currentUserID']) + "'"
-        sql += " , '" + None + "'"
         sql += " , '" + commentForm.comment.data + "'"
         sql += " , '" + dateTime + "'"
         sql += " , 0, 0)"
-        tupleCursor.execute(sql, val)
+        tupleCursor.execute(sql)
         db.commit()
         flash('Comment posted!', 'success')
         return redirect('/viewPost/%d' %postID)
