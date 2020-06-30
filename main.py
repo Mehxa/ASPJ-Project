@@ -39,6 +39,9 @@ app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 mail = Mail(app)
 """ For testing purposes only. To make it convenient cause I can't remember all the account names.
 Uncomment the account that you would like to use. To run the program as not logged in, run the first one."""
+global sessionID
+sessionID = 0
+sessions={}
 sessionInfo = {'login': False, 'currentUserID': 0, 'username': '', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 1, 'username': 'NotABot', 'isAdmin': 1}
 # sessionInfo = {'login': True, 'currentUserID': 2, 'username': 'CoffeeGirl', 'isAdmin': 1}
@@ -46,9 +49,11 @@ sessionInfo = {'login': False, 'currentUserID': 0, 'username': '', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 4, 'username': 'Kobot', 'isAdmin': 1}
 # sessionInfo = {'login': True, 'currentUserID': 5, 'username': 'MarySinceBirthButStillSingle', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 6, 'username': 'theauthenticcoconut', 'isAdmin': 0}
-sessionInfo = {'login': True, 'currentUserID': 7, 'username': 'johnnyjohnny', 'isAdmin': 0}
+# sessionInfo = {'login': True, 'currentUserID': 7, 'username': 'johnnyjohnny', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 8, 'username': 'iamjeff', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 9, 'username': 'hanbaobao', 'isAdmin': 0}
+# sessionID += 1
+# sessions[sessionID] = sessionInfo
 
 def get_all_topics(option):
     sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
@@ -111,8 +116,8 @@ def searchPosts():
 
     return render_template('searchPost.html', currentPage='search', **sessionInfo, searchBarForm=searchBarForm, postList=relatedPosts)
 
-@app.route('/viewPost/<int:postID>', methods=["GET", "POST"])
-def viewPost(postID):
+@app.route('/viewPost/<int:postID>/<sessionId>', methods=["GET", "POST"])
+def viewPost(postID, sessionId):
     if not sessionInfo['login']:
         return redirect('/login')
 
@@ -169,8 +174,8 @@ def viewPost(postID):
 
     return render_template('viewPost.html', currentPage='viewPost', **sessionInfo, commentForm = commentForm, replyForm = replyForm, post = post, commentList = commentList)
 
-@app.route('/addPost', methods=["GET", "POST"])
-def addPost():
+@app.route('/addPost/<sessionId>', methods=["GET", "POST"])
+def addPost(sessionId):
     if not sessionInfo['login']:
         return redirect('/login')
 
@@ -193,8 +198,8 @@ def addPost():
 
     return render_template('addPost.html', currentPage='addPost', **sessionInfo, postForm=postForm)
 
-@app.route('/feedback', methods=["GET", "POST"])
-def feedback():
+@app.route('/feedback/<sessionId>', methods=["GET", "POST"])
+def feedback(sessionId):
     if not sessionInfo['login']:
         return redirect('/login')
     feedbackForm = Forms.FeedbackForm(request.form)
@@ -215,6 +220,7 @@ def feedback():
 
 @app.route('/login', methods=["GET", "POST"])
 def login():
+    global sessionID
     loginForm = Forms.LoginForm(request.form)
     if request.method == 'POST' and loginForm.validate():
         sql = "SELECT UserID, Username, isAdmin FROM user WHERE"
@@ -229,6 +235,9 @@ def login():
             sessionInfo['currentUserID'] = int(findUser['UserID'])
             sessionInfo['username'] = findUser['Username']
             sessionInfo['isAdmin'] = findUser['isAdmin']
+            sessionID += 1
+            sessionInfo['sessionID'] = sessionID
+            sessions[sessionID] = sessionInfo
             flash('Welcome! You are now logged in as %s.' %(sessionInfo['username']), 'success')
             if sessionInfo['isAdmin']:
                 return redirect('/adminHome')
@@ -239,9 +248,11 @@ def login():
 
 @app.route('/logout')
 def logout():
+    sessionInfo = sessions[sessionID]
     sessionInfo['login'] = False
     sessionInfo['currentUser'] = 0
     sessionInfo['username'] = ''
+    sessions.pop(sessionID)
     return redirect('/home')
 
 @app.route('/signup', methods=["GET", "POST"])
@@ -276,14 +287,16 @@ def signUp():
             sessionInfo['login'] = True
             sessionInfo['currentUserID'] = int(findUser[0])
             sessionInfo['username'] = findUser[1]
-
+            sessionID +=1
+            sessions[sessionID] = sessionInfo
             flash('Account successfully created! You are now logged in as %s.' %(sessionInfo['username']), 'success')
             return redirect('/home')
 
     return render_template('signup.html', currentPage='signUp', **sessionInfo, signUpForm = signUpForm)
 
-@app.route('/profile/<username>', methods=["GET", "POST"])
-def profile(username):
+@app.route('/profile/<username>/<sessionId>', methods=["GET", "POST"])
+def profile(username, sessionId):
+    sessionInfo = sessions[sessionID]
     updateProfileForm = Forms.SignUpForm(request.form)
     sql = "SELECT * FROM user WHERE user.Username='" + str(username) + "'"
     dictCursor.execute(sql)
@@ -347,13 +360,15 @@ def profile(username):
 @app.route('/topics')
 def topics():
     # uncomment from here
+    # sessionInfo = sessions[sessionID]
     sql = "SELECT Content,TopicID FROM topic ORDER BY Content "
     tupleCursor.execute(sql)
     listOfTopics = tupleCursor.fetchall()
     return render_template('topics.html', currentPage='topics', **sessionInfo, listOfTopics=listOfTopics)
 
-@app.route('/indivTopic/<topicID>', methods=["GET", "POST"])
-def indivTopic(topicID):
+@app.route('/indivTopic/<topicID>/<sessionId>', methods=["GET", "POST"])
+def indivTopic(topicID, sessionId):
+    sessionInfo = sessions[sessionID]
     sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
     sql += " INNER JOIN user ON post.UserID=user.UserID"
     sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
@@ -371,6 +386,7 @@ def indivTopic(topicID):
 
 @app.route('/adminProfile/<username>', methods=["GET", "POST"])
 def adminUserProfile(username):
+    sessionInfo = sessions[sessionID]
     sql = "SELECT * FROM user WHERE user.Username='" + str(username) + "'"
     dictCursor.execute(sql)
     userData = dictCursor.fetchone()
@@ -400,6 +416,7 @@ def adminUserProfile(username):
 
 @app.route('/adminHome')
 def adminHome():
+    sessionInfo = sessions[sessionID]
     searchBarForm = Forms.SearchBarForm(request.form)
     searchBarForm.topic.choices = get_all_topics('all')
     if request.method == 'POST' and searchBarForm.validate():
@@ -420,6 +437,7 @@ def adminHome():
 
 @app.route('/adminViewPost/<int:postID>', methods=["GET", "POST"])
 def adminViewPost(postID):
+    sessionInfo = sessions[sessionID]
 
     sql = "SELECT post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted,post.TopicID,post.PostID, user.Username, topic.Content AS Topic FROM post"
     sql += " INNER JOIN user ON post.UserID=user.UserID"
@@ -449,6 +467,7 @@ def adminViewPost(postID):
 @app.route('/adminTopics')
 def adminTopics():
     # uncomment from here
+    sessionInfo  = sessions[sessionID]
     sql = "SELECT Content,TopicID FROM topic ORDER BY Content "
     tupleCursor.execute(sql)
     listOfTopics = tupleCursor.fetchall()
@@ -456,6 +475,7 @@ def adminTopics():
 
 @app.route('/adminIndivTopic/<topicID>', methods=["GET", "POST"])
 def adminIndivTopic(topicID):
+    sessionInfo = sessions[sessionID]
     sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
     sql += " INNER JOIN user ON post.UserID=user.UserID"
     sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
@@ -473,7 +493,7 @@ def adminIndivTopic(topicID):
 
 @app.route('/addTopic', methods=["GET", "POST"])
 def addTopic():
-
+    sessionInfo = sessions[sessionID]
     # uncomment here
     if not sessionInfo['login']:
         return redirect('/login')
@@ -501,6 +521,7 @@ def addTopic():
 
 @app.route('/adminUsers')
 def adminUsers():
+    sessionInfo = sessions[sessionID]
     sql = "SELECT Username From user"
     tupleCursor.execute(sql)
     listOfUsernames = tupleCursor.fetchall()
@@ -517,7 +538,6 @@ def deleteUser(username):
         msg = Message("Lorem Ipsum",
             sender="deloremipsumonlinestore@outlook.com",
             recipients=[user_email[0]])
-        print("testinggggggggggggggg")
         msg.body = "Your account has been terminated"
         msg.html = render_template('email.html', postID="delete user", username=username, content=0, posted=0)
         mail.send(msg)
@@ -544,7 +564,6 @@ def deletePost(postID):
         msg = Message("Lorem Ipsum",
             sender="deloremipsumonlinestore@outlook.com",
             recipients=[email_info[0]['email']])
-        print("testinggggggggggggggg")
         msg.body = "Your post has been deleted"
         for info in email_info:
             msg.html = render_template('email.html', postID=postID, username=info['Username'], content=info['Content'], posted=info['DatetimePosted'])
@@ -558,6 +577,7 @@ def deletePost(postID):
     return redirect('/adminHome')
 @app.route('/adminFeedback')
 def adminFeedback():
+    sessionInfo = sessions[sessionID]
     sql = "SELECT feedback.Content, feedback.DatetimePosted, feedback.Reason,feedback.FeedbackID, user.Username, user.Email "
     sql += "FROM feedback"
     sql+= " INNER JOIN user ON feedback.UserID = user.UserID"
@@ -568,6 +588,7 @@ def adminFeedback():
 
 @app.route('/replyFeedback/<feedbackID>',methods=["GET","POST"])
 def replyFeedback(feedbackID):
+    sessionInfo = sessions[sessionID]
     sql = "SELECT feedback.Content, feedback.DatetimePosted, feedback.Reason,feedback.FeedbackID, user.Username, user.Email "
     sql += "FROM feedback"
     sql+= " INNER JOIN user ON feedback.UserID = user.UserID"
@@ -585,7 +606,6 @@ def replyFeedback(feedbackID):
             msg = Message("Lorem Ipsum",
                 sender="deloremipsumonlinestore@outlook.com",
                 recipients=[email])
-            print("testinggggggggggggggg")
             msg.body = "We love your feedback!"
             msg.html = render_template('email.html', postID="feedback reply", username=feedbackList[0]['Username'], content=feedbackList[0]['Content'], posted=feedbackList[0]['DatetimePosted'], reply=reply)
             mail.send(msg)
