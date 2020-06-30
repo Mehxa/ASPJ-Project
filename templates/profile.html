@@ -59,14 +59,14 @@
   {% if recentPosts == [] %}
   <p class="profile-title text-center my-5">You have not posted anything</p>
   <div class="text-center">
-    <a href="/addPost" class="btn btn-danger">Add Post</a>
+    <a href="/addPost/{{sessionID}}" class="btn btn-danger">Add Post</a>
   </div>
   {% else %}
   <p class="profile-title text-center my-3">Your Posts</p>
     <div class="col-md-10 mx-auto">
       {% for post in recentPosts %}
         <div class="post-preview">
-          <a href="/viewPost/{{ post.PostID }}">
+          <a href="/viewPost/{{ post.PostID }}/{{sessionID}}">
             <h1 class="post-title">
               {{ post.Title }}
             </h1>
@@ -94,7 +94,7 @@
     <div class="col-md-10 mx-auto">
       {% for post in recentPosts %}
         <div class="post-preview">
-          <a href="/viewPost/{{ post.PostID }}">
+          <a href="/viewPost/{{ post.PostID }}/{{sessionID}}">
             <h1 class="post-title">
               {{ post.Title }}
             </h1>

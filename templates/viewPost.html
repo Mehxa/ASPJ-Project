@@ -22,7 +22,7 @@
           {{ post.Content }}
         </p>
 
-        <span class="post-meta">Posted by <a href="/profile/{{post.Username}}">{{ post.Username }}</a> on {{ post.DatetimePosted }} | <a href="/topic/{{ post.Topic }}">{{ post.Topic }}</a></span>
+        <span class="post-meta">Posted by <a href="/profile/{{post.Username}}/{{sessionID}}">{{ post.Username }}</a> on {{ post.DatetimePosted }} | <a href="/indivTopic/{{ post.Topic }}/{{sessionID}}">{{ post.Topic }}</a></span>
 
         <span class="post-votes ml-auto float-right">
           <a class="cancel-form" data-toggle="collapse" href="#commentForm"><i class="fa fa-comment"></i> Comment</a>
@@ -48,7 +48,7 @@
       {% for comment in commentList %}
       <div class="comment">
         <p class="comment-meta">
-          <a href="/profile/{{comment.Username}}">{{ comment.Username }}</a> on {{ comment.DatetimePosted }}
+          <a href="/profile/{{comment.Username}}/{{sessionID}}">{{ comment.Username }}</a> on {{ comment.DatetimePosted }}
         </p>
 
         <p>{{ comment.Content }}</p>
@@ -64,7 +64,7 @@
           {% for reply in comment.ReplyList %}
             <div class="sub-comment">
               <p class="comment-meta">
-                <a href="/profile/{{reply.Username}}">{{ reply.Username }}</a> on {{ reply.DatetimePosted }}
+                <a href="/profile/{{reply.Username}}/{{sessionID}}">{{ reply.Username }}</a> on {{ reply.DatetimePosted }}
               </p>
               <p>{{ reply.Content }}</p>
             </div> <!--Sub Comment-->
