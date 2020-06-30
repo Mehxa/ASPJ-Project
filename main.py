@@ -53,8 +53,8 @@ sessionInfo = {'login': True, 'currentUserID': 5, 'username': 'MarySinceBirthBut
 # sessionInfo = {'login': True, 'currentUserID': 7, 'username': 'johnnyjohnny', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 8, 'username': 'iamjeff', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 9, 'username': 'hanbaobao', 'isAdmin': 0}
-# sessionID += 1
-# sessions[sessionID] = sessionInfo
+sessionID += 1
+sessions[sessionID] = sessionInfo
 
 def get_all_topics(option):
     sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
@@ -299,7 +299,20 @@ def login():
         dictCursor.execute(sql)
         findUser = dictCursor.fetchone()
         if findUser==None:
-            loginForm.password.errors.append('Wrong email or password.')
+            # loginForm.password.errors.append('Wrong email or password.')
+            sql = "SELECT Username FROM user u WHERE u.Username= '" + loginForm.username.data + "'"
+            tupleCursor.execute(sql)
+            username = tupleCursor.fetchone()
+            sql = "SELECT Password FROM user u WHERE u.Password='" + loginForm.password.data + "'"
+            tupleCursor.execute(sql)
+            password = tupleCursor.fetchone()
+            if not username and not password:
+                loginForm.password.errors.append('Wrong email and password.')
+            elif username==None:
+                loginForm.password.errors.append('Wrong email or username.')
+
+            elif password==None:
+                loginForm.password.errors.append('Wrong password.')
         else:
             sessionInfo['login'] = True
             sessionInfo['currentUserID'] = int(findUser['UserID'])
@@ -318,6 +331,7 @@ def login():
 
 @app.route('/logout')
 def logout():
+    global sessionID
     sessionInfo = sessions[sessionID]
     sessionInfo['login'] = False
     sessionInfo['currentUser'] = 0
@@ -327,6 +341,7 @@ def logout():
 
 @app.route('/signup', methods=["GET", "POST"])
 def signUp():
+    global sessionID
     signUpForm = Forms.SignUpForm(request.form)
 
     if request.method == 'POST' and signUpForm.validate():
@@ -357,7 +372,8 @@ def signUp():
             sessionInfo['login'] = True
             sessionInfo['currentUserID'] = int(findUser[0])
             sessionInfo['username'] = findUser[1]
-            sessionID +=1
+            ssessionID += 1
+            sessionInfo['sessionID'] = sessionID
             sessions[sessionID] = sessionInfo
             flash('Account successfully created! You are now logged in as %s.' %(sessionInfo['username']), 'success')
             return redirect('/home')
@@ -366,6 +382,7 @@ def signUp():
 
 @app.route('/profile/<username>/<sessionId>', methods=["GET", "POST"])
 def profile(username, sessionId):
+    # global sessionID
     sessionInfo = sessions[sessionID]
     updateProfileForm = Forms.SignUpForm(request.form)
     sql = "SELECT * FROM user WHERE user.Username='" + str(username) + "'"
@@ -421,7 +438,7 @@ def profile(username, sessionId):
             else:
                 flash('Account successfully updated!', 'success')
 
-            return redirect('/profile/' + sessionInfo['username'])
+            return redirect('/profile/' + sessionInfo['username'] + '/' +str(sessionID))
 
 
 
