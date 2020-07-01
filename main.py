@@ -46,18 +46,24 @@ Uncomment the account that you would like to use. To run the program as not logg
 global sessionID
 sessionID = 0
 sessions={}
-sessionInfo = {'login': False, 'currentUserID': 0, 'username': '', 'isAdmin': 0}
+# sessionInfo = {'login': False, 'currentUserID': 0, 'username': '', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 1, 'username': 'NotABot', 'isAdmin': 1}
 # sessionInfo = {'login': True, 'currentUserID': 2, 'username': 'CoffeeGirl', 'isAdmin': 1}
 # sessionInfo = {'login': True, 'currentUserID': 3, 'username': 'Mehxa', 'isAdmin': 1}
 # sessionInfo = {'login': True, 'currentUserID': 4, 'username': 'Kobot', 'isAdmin': 1}
 # sessionInfo = {'login': True, 'currentUserID': 5, 'username': 'MarySinceBirthButStillSingle', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 6, 'username': 'theauthenticcoconut', 'isAdmin': 0}
-# sessionInfo = {'login': True, 'currentUserID': 7, 'username': 'johnnyjohnny', 'isAdmin': 0}
+sessionInfo = {'login': True, 'currentUserID': 7, 'username': 'johnnyjohnny', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 8, 'username': 'iamjeff', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 9, 'username': 'hanbaobao', 'isAdmin': 0}
+<<<<<<< HEAD
+sessionID += 1
+sessionInfo['sessionID'] = sessionID
+sessions[sessionID] = sessionInfo
+=======
 # sessionID += 1
 # sessions[sessionID] = sessionInfo
+>>>>>>> 165ae71db8956b555a1f15e57b1bed6501f37d9d
 
 def get_all_topics(option):
     sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
@@ -231,7 +237,7 @@ def viewPost(postID, sessionId):
         tupleCursor.execute(sql)
         db.commit()
         flash('Comment posted!', 'success')
-        return redirect('/viewPost/%d' %postID)
+        return redirect('/viewPost/%d/%d' %(postID,sessionInfo['sessionID']))
 
     if request.method == 'POST' and replyForm.validate():
         dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
@@ -243,7 +249,7 @@ def viewPost(postID, sessionId):
         tupleCursor.execute(sql)
         db.commit()
         flash('Comment posted!', 'success')
-        return redirect('/viewPost/%d' %postID)
+        return redirect('/viewPost/%d/%d' %(postID, sessionInfo['sessionID']))
 
     return render_template('viewPost.html', currentPage='viewPost', **sessionInfo, commentForm = commentForm, replyForm = replyForm, post = post, commentList = commentList)
 
