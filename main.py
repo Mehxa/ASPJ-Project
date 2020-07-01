@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, send_from_directory
 import mysql.connector, re
 import Forms
 from datetime import datetime
@@ -33,8 +33,11 @@ app.config.update(
 	# MAIL_PASSWORD = os.environ["MAIL_PASSWORD"],
 	MAIL_DEBUG = True,
 	MAIL_SUPPRESS_SEND = False,
-    MAIL_ASCII_ATTACHMENTS = True
+    MAIL_ASCII_ATTACHMENTS = True,
+    # Directory for admins to refer files (Files)
+    UPLOAD_FOLDER = "templates\Files"
 	)
+
 
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 mail = Mail(app)
@@ -48,13 +51,13 @@ sessionInfo = {'login': False, 'currentUserID': 0, 'username': '', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 2, 'username': 'CoffeeGirl', 'isAdmin': 1}
 # sessionInfo = {'login': True, 'currentUserID': 3, 'username': 'Mehxa', 'isAdmin': 1}
 # sessionInfo = {'login': True, 'currentUserID': 4, 'username': 'Kobot', 'isAdmin': 1}
-sessionInfo = {'login': True, 'currentUserID': 5, 'username': 'MarySinceBirthButStillSingle', 'isAdmin': 0}
+# sessionInfo = {'login': True, 'currentUserID': 5, 'username': 'MarySinceBirthButStillSingle', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 6, 'username': 'theauthenticcoconut', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 7, 'username': 'johnnyjohnny', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 8, 'username': 'iamjeff', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 9, 'username': 'hanbaobao', 'isAdmin': 0}
-sessionID += 1
-sessions[sessionID] = sessionInfo
+# sessionID += 1
+# sessions[sessionID] = sessionInfo
 
 def get_all_topics(option):
     sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
@@ -255,7 +258,7 @@ def addPost(sessionId):
     if request.method == 'POST' and postForm.validate():
         dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
         sql = 'INSERT INTO post (TopicID, UserID, DateTimePosted, Title, Content, Upvotes, Downvotes) VALUES'
-        sql += " ('" + str(postForm.topic.data) + "'"
+        sql += " ('" + str(postForm.topic.data )+ "'"
         sql += " , '" + str(sessionInfo['currentUserID']) + "'"
         sql += " , '" + dateTime + "'"
         sql += " , '" + postForm.title.data + "'"
@@ -321,6 +324,10 @@ def login():
             sessionID += 1
             sessionInfo['sessionID'] = sessionID
             sessions[sessionID] = sessionInfo
+            sessionRecord = open("templates\Files\sessionRecord.txt","a")
+            record = "%s signed in at %s, sessionID: %d \n" % (sessionInfo['username'], datetime.now(), sessionInfo['sessionID'])
+            sessionRecord.write(record)
+            sessionRecord.close()
             flash('Welcome! You are now logged in as %s.' %(sessionInfo['username']), 'success')
             if sessionInfo['isAdmin']:
                 return redirect('/adminHome')
@@ -337,6 +344,9 @@ def logout():
     sessionInfo['currentUser'] = 0
     sessionInfo['username'] = ''
     sessions.pop(sessionID)
+    sessionRecord = open("templates\Files\sessionRecord.txt", "a")
+    record = "%s signed out at %s, sessionID: %d \n" % (sessionInfo['username'], datetime.now(), sessionInfo['sessionID'])
+    sessionRecord.close()
     return redirect('/home')
 
 @app.route('/signup', methods=["GET", "POST"])
@@ -372,9 +382,12 @@ def signUp():
             sessionInfo['login'] = True
             sessionInfo['currentUserID'] = int(findUser[0])
             sessionInfo['username'] = findUser[1]
-            ssessionID += 1
+            sessionID += 1
             sessionInfo['sessionID'] = sessionID
             sessions[sessionID] = sessionInfo
+            sessionRecord = open("templates\Files\sessionRecord.txt", "a")
+            record = "New account %s created at %s, sessionID: %d \n" % (sessionInfo['username'], datetime.now(), sessionInfo['sessionID'])
+            sessionRecord.close()
             flash('Account successfully created! You are now logged in as %s.' %(sessionInfo['username']), 'success')
             return redirect('/home')
 
@@ -404,6 +417,7 @@ def profile(username, sessionId):
         post['Content'] = post['Content'][:200]
 
     if request.method == "POST" and updateProfileForm.validate():
+        oldUsername = username
         oldUserID = sessionInfo['currentUserID']
         sql = "UPDATE user "
         sql += "SET Username='" + updateProfileForm.username.data + "',"
@@ -421,7 +435,9 @@ def profile(username, sessionId):
             errorMsg = str(errorMsg)
             if 'email' in errorMsg.lower():
                 updateProfileForm.email.errors.append('The email has already been linked to another account. Please use a different email.')
+                flash("This email has already been linked to another account. Please use a different email.", "success")
             elif 'username' in errorMsg.lower():
+                flash("This username is already taken!", "success")
                 updateProfileForm.username.errors.append('This username is already taken.')
         else:
             sql = "SELECT UserID, Username FROM user WHERE"
@@ -432,6 +448,13 @@ def profile(username, sessionId):
             sessionInfo['login'] = True
             sessionInfo['currentUserID'] = int(findUser[0])
             sessionInfo['username'] = findUser[1]
+            sessions[sessionID] = sessionInfo
+            sessionRecord = open("templates\Files\sessionRecord.txt", "a")
+            if oldUsername == sessionInfo['username']:
+                record = "Account %s updated at %s, sessionID: %d \n" % (sessionInfo['username'], datetime.now(), sessionInfo['sessionID'])
+            else:
+                record = "Account %s updated at %s, account's username is now %s sessionID: %d \n" % (oldUsername,  datetime.now(), sessionInfo['username'], sessionInfo['sessionID'])
+            sessionRecord.close()
 
             if sessionInfo['currentUserID'] != oldUserID:
                 flash('Account successfully updated! Your username now is %s.' %(sessionInfo['username']), 'success')
@@ -703,6 +726,21 @@ def replyFeedback(feedbackID):
             print("goes into except")
         return redirect('/adminFeedback')
     return render_template('replyFeedback.html', currentPage='replyFeedback', **sessionInfo,replyForm=replyForm, feedbackList=feedbackList)
+
+@app.route('/adminFiles')
+def list_files():
+    files = []
+    for filename in os.listdir(app.config['UPLOAD_FOLDER']):
+        path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        if os.path.isfile(path):
+            files.append(filename)
+    print(files)
+    return render_template('adminFiles.html', files=files, **sessionInfo)
+
+@app.route('/adminFiles/<path:path>')
+def download(path):
+    return send_from_directory(directory=app.config['UPLOAD_FOLDER'], filename=path, as_attachment=True)
+
 
 if __name__ == "__main__":
     app.run(debug=True)

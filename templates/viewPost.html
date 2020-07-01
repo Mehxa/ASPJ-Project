@@ -18,9 +18,11 @@
           {{ post.Title }}
         </h1>
 
+        {% autoescape false %}
         <p class="post-text">
           {{ post.Content }}
         </p>
+        {% endautoescape %}
 
         <span class="post-meta">Posted by <a href="/profile/{{post.Username}}/{{sessionID}}">{{ post.Username }}</a> on {{ post.DatetimePosted }} | <a href="/indivTopic/{{ post.Topic }}/{{sessionID}}">{{ post.Topic }}</a></span>
 
@@ -51,7 +53,9 @@
           <a href="/profile/{{comment.Username}}/{{sessionID}}">{{ comment.Username }}</a> on {{ comment.DatetimePosted }}
         </p>
 
+        {% autoescape false %}
         <p>{{ comment.Content }}</p>
+        {% endautoescape %}
 
         <div class="comment-functions text-right">
           <a href="#" data-toggle="modal" data-target="#replyModal" data-id="{{ comment.CommentID }}"><i class="fa fa-reply"></i> Reply</a>

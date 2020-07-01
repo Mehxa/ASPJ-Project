@@ -51,8 +51,9 @@
 
             {% for topic in listOfTopics %}
             <div class="col-md-6">
-
-               <a href="/adminIndivTopic/{{topic[1]}}">{{topic[0]}}</a>
+              {% autoescape false %}
+               <a href="/adminIndivTopic/{{topic[1]}}"><p class="font-weight-bold" style="color:black;">{{topic[0]}}</p></a>
+               {% endautoescape %}
               <hr>
             </div>
 

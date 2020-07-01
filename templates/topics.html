@@ -6,6 +6,7 @@
 {% endblock %}
 
 {% block content %}
+{% autoescape false %}
 <div class="container my-4">
   <div class="row justify-content-center">
     <div class="col-md-12">
@@ -47,7 +48,7 @@
             {% for topic in listOfTopics %}
             <div class="col-md-6">
 
-              <a href="/indivTopic/{{topic[1]}}/{{sessionID}}">{{topic[0]}}</a>
+              <a href="/indivTopic/{{topic[1]}}/{{sessionID}}"><p class="font-weight-bold" style="color:black">{{topic[0]}}</p></a>
               <hr>
             </div>
 
@@ -62,4 +63,5 @@
 
   </div> <!--Row-->
 </div> <!--Container-->
+{% endautoescape %}
 {% endblock %}
