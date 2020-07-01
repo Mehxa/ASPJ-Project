@@ -70,7 +70,9 @@
               <p class="comment-meta">
                 <a href="/profile/{{reply.Username}}/{{sessionID}}">{{ reply.Username }}</a> on {{ reply.DatetimePosted }}
               </p>
+              {% autoescape false %}
               <p>{{ reply.Content }}</p>
+              {% endautoescape %}
             </div> <!--Sub Comment-->
           {% endfor %}
         {% endif %}
