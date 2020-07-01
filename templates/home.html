@@ -18,7 +18,11 @@
     <div class="col-md-3">
       <div class="sticky-top">
         <div>
+          {%if login%}
           <a href="/addPost/{{sessionID}}" class="btn btn-danger w-100">Add Post</a>
+          {%else%}
+          <a href="/login" class="btn btn-danger w-100">Add Post</a>
+          {%endif%}
         </div>
 
         <div class="my-3" id="trending-topics">
@@ -65,7 +69,11 @@
 
       {% for post in recentPosts %}
         <div class="post-preview my-3">
+          {%if login%}
           <a href="/viewPost/{{ post.PostID }}/{{sessionID}}">
+          {%else%}
+          <a href="/login">
+          {%endif%}
             <h1 class="post-title">
               {{ post.Title }}
             </h1>
