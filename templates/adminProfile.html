@@ -73,7 +73,7 @@
             {{ post.Content }} <span style="color: #6a6a6a; font-size: 14px;">... See More</span>
           </h2>
         </a>
-        <span class="post-meta">Posted by <a href="#">{{ post.Username }}</a> on {{ post.DatetimePosted }} | <a href="#">{{ post.Topic }}</a></span>
+        <span class="post-meta">Posted by <a href="#">{{ post.Username }}</a> on {{ post.DatetimePosted }} | <a href="/adminIndivTopic/{{post.TopicID}}">{{ post.Topic }}</a></span>
 
         <span class="post-votes ml-auto float-right">
           <a href="#" data-toggle="modal" data-target="#DeletePostModal"><i class="fa fa-trash" aria-hidden="true"></i></a>

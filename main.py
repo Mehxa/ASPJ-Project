@@ -288,7 +288,7 @@ def feedback(sessionId):
         tupleCursor.execute(sql)
         db.commit()
         flash('Feedback sent!', 'success')
-        return redirect('/feedback')
+        return redirect('/feedback/%d' %sessionInfo['sessionID'])
 
     return render_template('feedback.html', currentPage='feedback', **sessionInfo, feedbackForm = feedbackForm)
 
@@ -501,7 +501,7 @@ def adminUserProfile(username):
     sql = "SELECT * FROM user WHERE user.Username='" + str(username) + "'"
     dictCursor.execute(sql)
     userData = dictCursor.fetchone()
-    sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
+    sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.TopicID, topic.Content AS Topic FROM post"
     sql += " INNER JOIN user ON post.UserID=user.UserID"
     sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
     sql += " WHERE user.Username='" + str(username) + "'"
@@ -533,7 +533,7 @@ def adminHome():
     if request.method == 'POST' and searchBarForm.validate():
         return redirect(url_for('searchPosts', searchQuery = searchBarForm.searchQuery.data, topic = searchBarForm.topic.data))
 
-    sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
+    sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username,topic.TopicID, topic.Content AS Topic FROM post"
     sql += " INNER JOIN user ON post.UserID=user.UserID"
     sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
     sql += " ORDER BY post.PostID DESC LIMIT 6"
