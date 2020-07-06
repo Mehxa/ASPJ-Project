@@ -46,10 +46,10 @@
             </a>
             <span class="post-meta">Posted by <a href="#">{{ post.Username }}</a> on {{ post.DatetimePosted }} | <a href="/indivTopic/{{ post.Topic }}/{{sessionID}}">{{ post.Topic }}</a></span>
 
-            <span class="post-votes ml-auto float-right">
-              <a href="#"><i class="fa fa-arrow-up"></i></a>
+            <span class="post-votes ml-auto float-right" id="post-votes-{{ post.PostID }}">
+              <a onclick="postVote(this);" data-vote="1" data-post="{{ post.PostID }}"><i class="fa fa-arrow-up {% if post.UserVote==1 %}active{% endif %}"></i></a>
               <span id="postTotalVotes">{{ post.TotalVotes }}</span>
-              <a href="#"><i class="fa fa-arrow-down"></i></a>
+              <a onclick="postVote(this);" data-vote="-1" data-post="{{ post.PostID }}"><i class="fa fa-arrow-down {% if post.UserVote==-1 %}active{% endif %}"></i></a>
             </span> <!--Votes-->
           </div> <!--Post-->
         {% endfor %}
@@ -58,4 +58,8 @@
 
   </div> <!--Row-->
 </div> <!--Container-->
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/scripts/post-votes.js"></script>
 {% endblock %}

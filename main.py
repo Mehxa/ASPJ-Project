@@ -46,30 +46,31 @@ Uncomment the account that you would like to use. To run the program as not logg
 global sessionID
 sessionID = 0
 sessions={}
-# sessionInfo = {'login': False, 'currentUserID': 0, 'username': '', 'isAdmin': 0}
+sessionInfo = {'login': False, 'currentUserID': 0, 'username': '', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 1, 'username': 'NotABot', 'isAdmin': 1}
 # sessionInfo = {'login': True, 'currentUserID': 2, 'username': 'CoffeeGirl', 'isAdmin': 1}
 # sessionInfo = {'login': True, 'currentUserID': 3, 'username': 'Mehxa', 'isAdmin': 1}
 # sessionInfo = {'login': True, 'currentUserID': 4, 'username': 'Kobot', 'isAdmin': 1}
 # sessionInfo = {'login': True, 'currentUserID': 5, 'username': 'MarySinceBirthButStillSingle', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 6, 'username': 'theauthenticcoconut', 'isAdmin': 0}
-sessionInfo = {'login': True, 'currentUserID': 7, 'username': 'johnnyjohnny', 'isAdmin': 0}
+# sessionInfo = {'login': True, 'currentUserID': 7, 'username': 'johnnyjohnny', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 8, 'username': 'iamjeff', 'isAdmin': 0}
-# sessionInfo = {'login': True, 'currentUserID': 9, 'username': 'hanbaobao', 'isAdmin': 0}
+sessionInfo = {'login': True, 'currentUserID': 9, 'username': 'hanbaobao', 'isAdmin': 0}
 sessionID += 1
 sessionInfo['sessionID'] = sessionID
 sessions[sessionID] = sessionInfo
-# sessionID += 1
-# sessions[sessionID] = sessionInfo
-
 
 def get_all_topics(option):
     sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
-    tupleCursor.execute(sql)
-    listOfTopics = tupleCursor.fetchall()
+    dictCursor.execute(sql)
+    listOfTopics = dictCursor.fetchall()
+    topicTuples = []
+    for topic in listOfTopics:
+        topicTuples.append((str(topic['TopicID']), topic['Content']))
+
     if option=='all':
-        listOfTopics.insert(0, (0, 'All Topics'))
-    return listOfTopics
+        topicTuples.insert(0, ('0', 'All Topics'))
+    return topicTuples
 
 @app.route('/postVote', methods=["GET", "POST"])
 def postVote():
@@ -78,7 +79,7 @@ def postVote():
         return make_response(jsonify({'message': 'Please log in to vote.'}), 401)
 
     data = request.get_json(force=True)
-    currentVote = DatabaseManager.get_user_vote(str(sessionInfo['currentUserID']), data['postID'])
+    currentVote = DatabaseManager.get_user_post_vote(str(sessionInfo['currentUserID']), data['postID'])
 
     if currentVote==None:
         if data['voteValue']=='1':
@@ -133,6 +134,69 @@ def postVote():
     return make_response(jsonify({'toggleUpvote': toggleUpvote, 'toggleDownvote': toggleDownvote
     , 'newVote': newVote, 'updatedVoteTotal': updatedVoteTotal, 'postID': data['postID']}), 200)
 
+@app.route('/commentVote', methods=["GET", "POST"])
+def commentVote():
+    if not sessionInfo['login']:
+        flash('You must be logged in to vote.', 'warning')
+        return make_response(jsonify({'message': 'Please log in to vote.'}), 401)
+
+    data = request.get_json(force=True)
+    print(data)
+    currentVote = DatabaseManager.get_user_comment_vote(str(sessionInfo['currentUserID']), data['commentID'])
+
+    if currentVote==None:
+        if data['voteValue']=='1':
+            toggleUpvote = True
+            toggleDownvote = False
+            newVote = 1
+            upvoteChange = '+1'
+            downvoteChange = '0'
+        else:
+            toggleUpvote = False
+            toggleDownvote = True
+            newVote = -1
+            upvoteChange = '0'
+            downvoteChange = '+1'
+
+        DatabaseManager.insert_comment_vote(str(sessionInfo['currentUserID']), data['commentID'], data['voteValue'])
+
+    else: # If vote for post exists
+        if currentVote['Vote']==1:
+            upvoteChange = '-1'
+            if data['voteValue']=='1':
+                toggleUpvote = True
+                toggleDownvote = False
+                newVote = 0
+                downvoteChange = '0'
+            else:
+                toggleUpvote = True
+                toggleDownvote = True
+                newVote = -1
+                downvoteChange = '+1'
+
+        else: # currentVote['Vote']==-1
+            downvoteChange = '-1'
+            if data['voteValue']=='1':
+                toggleUpvote = True
+                toggleDownvote = True
+                newVote = 1
+                upvoteChange = '+1'
+            else:
+                toggleUpvote = False
+                toggleDownvote = True
+                newVote = 0
+                upvoteChange = '0'
+
+        if newVote==0:
+            DatabaseManager.delete_comment_vote(str(sessionInfo['currentUserID']), data['commentID'])
+        else:
+            DatabaseManager.update_comment_vote(str(newVote), str(sessionInfo['currentUserID']), data['commentID'])
+
+    DatabaseManager.update_overall_comment_vote(upvoteChange, downvoteChange, data['commentID'])
+    updatedCommentTotal = DatabaseManager.calculate_updated_comment_votes(data['commentID'])
+    return make_response(jsonify({'toggleUpvote': toggleUpvote, 'toggleDownvote': toggleDownvote
+    , 'newVote': newVote, 'updatedCommentTotal': updatedCommentTotal, 'commentID': data['commentID']}), 200)
+
 @app.route('/')
 def main():
     return redirect("/home")
@@ -153,7 +217,7 @@ def home():
     recentPosts = dictCursor.fetchall()
     for post in recentPosts:
         if sessionInfo['login']:
-            currentVote = DatabaseManager.get_user_vote(str(sessionInfo['currentUserID']), str(post['PostID']))
+            currentVote = DatabaseManager.get_user_post_vote(str(sessionInfo['currentUserID']), str(post['PostID']))
             if currentVote==None:
                 post['UserVote'] = 0
             else:
@@ -175,7 +239,7 @@ def searchPosts():
     searchBarForm.searchQuery.data = searchQuery
 
     searchTopic = request.args.get('topic', default='0')
-    searchBarForm.topic.data = int(searchTopic)
+    searchBarForm.topic.data = searchTopic
 
     sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
     sql += " INNER JOIN user ON post.UserID=user.UserID"
@@ -198,13 +262,18 @@ def viewPost(postID, sessionId):
     if not sessionInfo['login']:
         return redirect('/login')
 
-    sql = "SELECT post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
+    sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
     sql += " INNER JOIN user ON post.UserID=user.UserID"
     sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
     sql += " WHERE PostID=" + str(postID)
     dictCursor.execute(sql)
     post = dictCursor.fetchone()
     post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
+    currentVote = DatabaseManager.get_user_post_vote(str(sessionInfo['currentUserID']), str(post['PostID']))
+    if currentVote==None:
+        post['UserVote'] = 0
+    else:
+        post['UserVote'] = currentVote['Vote']
 
     sql = "SELECT comment.CommentID, comment.Content, comment.DatetimePosted, comment.Upvotes, comment.Downvotes, comment.DatetimePosted, user.Username FROM comment"
     sql += " INNER JOIN user ON comment.UserID=user.UserID"
@@ -213,6 +282,12 @@ def viewPost(postID, sessionId):
     commentList = dictCursor.fetchall()
     for comment in commentList:
         comment['TotalVotes'] = comment['Upvotes'] - comment['Downvotes']
+        print(comment['TotalVotes'])
+        currentVote = DatabaseManager.get_user_comment_vote(str(sessionInfo['currentUserID']), str(comment['CommentID']))
+        if currentVote==None:
+            comment['UserVote'] = 0
+        else:
+            comment['UserVote'] = currentVote['Vote']
 
         sql = "SELECT reply.Content, reply.DatetimePosted, reply.DatetimePosted, user.Username FROM reply"
         sql += " INNER JOIN user ON reply.UserID=user.UserID"
@@ -291,7 +366,7 @@ def feedback(sessionId):
         tupleCursor.execute(sql)
         db.commit()
         flash('Feedback sent!', 'success')
-        return redirect('/feedback')
+        return redirect('/feedback/%d' %sessionInfo['sessionID'])
 
     return render_template('feedback.html', currentPage='feedback', **sessionInfo, feedbackForm = feedbackForm)
 
@@ -504,7 +579,7 @@ def adminUserProfile(username):
     sql = "SELECT * FROM user WHERE user.Username='" + str(username) + "'"
     dictCursor.execute(sql)
     userData = dictCursor.fetchone()
-    sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
+    sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.TopicID, topic.Content AS Topic FROM post"
     sql += " INNER JOIN user ON post.UserID=user.UserID"
     sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
     sql += " WHERE user.Username='" + str(username) + "'"
@@ -528,7 +603,7 @@ def adminUserProfile(username):
 
 
 
-@app.route('/adminHome')
+@app.route('/adminHome', methods=["GET", "POST"])
 def adminHome():
     sessionInfo = sessions[sessionID]
     searchBarForm = Forms.SearchBarForm(request.form)
@@ -536,7 +611,7 @@ def adminHome():
     if request.method == 'POST' and searchBarForm.validate():
         return redirect(url_for('searchPosts', searchQuery = searchBarForm.searchQuery.data, topic = searchBarForm.topic.data))
 
-    sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
+    sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username,topic.TopicID, topic.Content AS Topic FROM post"
     sql += " INNER JOIN user ON post.UserID=user.UserID"
     sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
     sql += " ORDER BY post.PostID DESC LIMIT 6"

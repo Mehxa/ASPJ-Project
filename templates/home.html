@@ -18,7 +18,11 @@
     <div class="col-md-3">
       <div class="sticky-top">
         <div>
+          {%if login%}
           <a href="/addPost/{{sessionID}}" class="btn btn-danger w-100">Add Post</a>
+          {%else%}
+          <a href="/login" class="btn btn-danger w-100">Add Post</a>
+          {%endif%}
         </div>
 
         <div class="my-3" id="trending-topics">
@@ -65,7 +69,11 @@
 
       {% for post in recentPosts %}
         <div class="post-preview my-3">
+          {%if login%}
           <a href="/viewPost/{{ post.PostID }}/{{sessionID}}">
+          {%else%}
+          <a href="/login">
+          {%endif%}
             <h1 class="post-title">
               {{ post.Title }}
             </h1>
@@ -73,7 +81,19 @@
               {{ post.Content }} <span style="color: #6a6a6a; font-size: 14px;">... See More</span>
             </h2>
           </a>
-          <span class="post-meta">Posted by <a href="/profile/{{post.Username}}/{{sessionID}}">{{ post.Username }}</a> on {{ post.DatetimePosted }} | <a href="/indivTopic/{{post.TopicID}}/{{sessionID}}">{{ post.Topic }}</a></span>
+          <span class="post-meta">Posted by
+            {%if login%}
+            <a href="/profile/{{post.Username}}/{{sessionID}}">{{ post.Username }}</a> on {{ post.DatetimePosted }} |
+            {%else%}
+            <a href="/login">{{ post.Username }}</a> on {{ post.DatetimePosted }} |
+            {%endif%}
+
+            {%if login%}
+            <a href="/indivTopic/{{post.TopicID}}/{{sessionID}}">{{ post.Topic }}</a>
+            {%else%}
+            <a href="/login">{{ post.Topic }}</a>
+            {%endif%}
+          </span>
 
           <span class="post-votes ml-auto float-right" id="post-votes-{{ post.PostID }}">
             <a onclick="postVote(this);" data-vote="1" data-post="{{ post.PostID }}"><i class="fa fa-arrow-up {% if post.UserVote==1 %}active{% endif %}"></i></a>
@@ -93,43 +113,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-  function postVote(button) {
-    var voteValue = button.getAttribute("data-vote");
-    var postID = button.getAttribute("data-post");
-
-    fetch('/postVote', {
-      headers: new Headers({
-        "content-type": "application/json"
-      }),
-      method: 'POST',
-      body: JSON.stringify({
-          "voteValue": voteValue,
-          "postID": postID
-      })
-    })
-
-    .then(function (response) { // At this point, Flask has printed our JSON
-      response.json().then(function(data) {
-        if (response.status === 401) {
-          location.reload();
-        }
-
-        else {
-          if (data['toggleUpvote']==true) {
-            document.querySelector('#post-votes-' + data['postID'] + ' [data-vote="1"] i.fa-arrow-up').classList.toggle('active');
-          }
-
-          if (data['toggleDownvote']) {
-            document.querySelector('#post-votes-' + data['postID'] + ' [data-vote="-1"] i.fa-arrow-down').classList.toggle('active');
-          }
-
-          document.querySelector('#post-votes-' + data['postID'] + ' #postTotalVotes').innerText = data['updatedVoteTotal'];
-        }
-      });
-    }).catch(function (error) {
-        console.log("Fetch error: " + error['message']);
-    });
-  }
-</script>
+<script src="/static/scripts/post-votes.js"></script>
 {% endblock %}
