@@ -22,23 +22,12 @@ from flask_login import LoginManager, UserMixin, login_user, current_user, logou
 #     database="blogdb"
 # )
 
-Base = automap_base()
 
-class User(Base,UserMixin):
-    __tablename__ = 'user'
-    def get_id(self):
-        return (self.UserID)
-class Posts(Base,UserMixin):
-    __tablename__ = 'post'
-class Topic(Base,UserMixin):
-    __tablename__ = 'topic'
 
-Base.prepare(db.engine, reflect = True)
-
-tupleCursor = db.cursor(buffered=True)
-dictCursor = db.cursor(buffered=True, dictionary=True)
-tupleCursor.execute("SHOW TABLES")
-print(tupleCursor)
+# tupleCursor = db.cursor(buffered=True)
+# dictCursor = db.cursor(buffered=True, dictionary=True)
+# tupleCursor.execute("SHOW TABLES")
+# print(tupleCursor)
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://ASPJuser:P@55w0rD@localhost/blogdb'
@@ -63,6 +52,18 @@ mail = Mail(app)
 Uncomment the account that you would like to use. To run the program as not logged in, run the first one."""
 
 db = SQLAlchemy(app)
+Base = automap_base()
+
+class User(Base,UserMixin):
+    __tablename__ = 'user'
+    def get_id(self):
+        return (self.UserID)
+class Posts(Base,UserMixin):
+    __tablename__ = 'post'
+class Topic(Base,UserMixin):
+    __tablename__ = 'topic'
+
+Base.prepare(db.engine, reflect = True)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
