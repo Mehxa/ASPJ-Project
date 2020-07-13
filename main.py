@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, send_from_directory
-import mysql.connector, re
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, send_from_directory,session
+# import mysql.connector, re
 import Forms
 from datetime import datetime
 # Flask mail
@@ -8,15 +8,32 @@ from flask_mail import Mail, Message
 import sys
 import asyncio
 from threading import Thread
-import DatabaseManager
+# import DatabaseManager
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import exc, insert, Column, Integer
+from sqlalchemy.ext.automap import automap_base
+from flask_login import LoginManager, UserMixin, login_user, current_user, logout_user, login_required
 
 
-db = mysql.connector.connect(
-    host="localhost",
-    user="ASPJuser",
-    password="P@55w0rD",
-    database="blogdb"
-)
+# db = mysql.connector.connect(
+#     host="localhost",
+#     user="ASPJuser",
+#     password="P@55w0rD",
+#     database="blogdb"
+# )
+
+Base = automap_base()
+
+class User(Base,UserMixin):
+    __tablename__ = 'user'
+    def get_id(self):
+        return (self.UserID)
+class Posts(Base,UserMixin):
+    __tablename__ = 'post'
+class Topic(Base,UserMixin):
+    __tablename__ = 'topic'
+
+Base.prepare(db.engine, reflect = True)
 
 tupleCursor = db.cursor(buffered=True)
 dictCursor = db.cursor(buffered=True, dictionary=True)
@@ -43,6 +60,11 @@ app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 mail = Mail(app)
 """ For testing purposes only. To make it convenient cause I can't remember all the account names.
 Uncomment the account that you would like to use. To run the program as not logged in, run the first one."""
+
+db = SQLAlchemy(app)
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+
 global sessionID
 sessionID = 0
 sessions={}
