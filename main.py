@@ -41,6 +41,7 @@ tupleCursor.execute("SHOW TABLES")
 print(tupleCursor)
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://ASPJuser:P@55w0rD@localhost/blogdb'
 app.config.update(
     MAIL_SERVER= 'smtp.office365.com',
     MAIL_PORT= 587,
