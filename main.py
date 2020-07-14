@@ -8,9 +8,9 @@ from flask_mail import Mail, Message
 import sys
 import asyncio
 from threading import Thread
-# import DatabaseManager
+import DatabaseManager
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import exc, insert, Column, Integer
+from sqlalchemy import exc, insert, Column, Integer, select
 from sqlalchemy.ext.automap import automap_base
 from flask_login import LoginManager, UserMixin, login_user, current_user, logout_user, login_required
 
@@ -53,19 +53,28 @@ Uncomment the account that you would like to use. To run the program as not logg
 
 db = SQLAlchemy(app)
 Base = automap_base()
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
 
 class User(Base,UserMixin):
     __tablename__ = 'user'
-    def get_id(self):
-        return (self.UserID)
-class Posts(Base,UserMixin):
+class Post(Base,UserMixin):
     __tablename__ = 'post'
 class Topic(Base,UserMixin):
     __tablename__ = 'topic'
+class Comment(Base,UserMixin):
+    __tablename__ = 'comment'
+class Reply(Base,UserMixin):
+    __tablename__ = 'reply'
+
 
 Base.prepare(db.engine, reflect = True)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return db.session.query(User).get(int(user_id))
 
 global sessionID
 sessionID = 0
@@ -85,13 +94,10 @@ sessionInfo['sessionID'] = sessionID
 sessions[sessionID] = sessionInfo
 
 def get_all_topics(option):
-    sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
-    dictCursor.execute(sql)
-    listOfTopics = dictCursor.fetchall()
+    listOfTopics = db.session.query(Topic).all()
     topicTuples = []
     for topic in listOfTopics:
-        topicTuples.append((str(topic['TopicID']), topic['Content']))
-
+        topicTuples.append((str(topic.TopicID), topic.Content))
     if option=='all':
         topicTuples.insert(0, ('0', 'All Topics'))
     return topicTuples
@@ -232,24 +238,24 @@ def home():
     if request.method == 'POST' and searchBarForm.validate():
         return redirect(url_for('searchPosts', searchQuery = searchBarForm.searchQuery.data, topic = searchBarForm.topic.data))
 
-    sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, post.TopicID, user.Username, topic.Content AS Topic FROM post"
-    sql += " INNER JOIN user ON post.UserID=user.UserID"
-    sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
-    sql += " ORDER BY post.PostID DESC LIMIT 6"
+    recentPosts = db.session.query(Post).all()
 
-    dictCursor.execute(sql)
-    recentPosts = dictCursor.fetchall()
-    for post in recentPosts:
+    for post in recentPosts[:6]:
+        user = db.session.query(User.Username).filter(User.UserID==post.UserID).one()
+        topic = db.session.query(Topic.Content).filter(Topic.TopicID==post.TopicID).one()
+        post.Username = user.Username
+        post.Topic = topic.Content
+
         if sessionInfo['login']:
-            currentVote = DatabaseManager.get_user_post_vote(str(sessionInfo['currentUserID']), str(post['PostID']))
+            currentVote = DatabaseManager.get_user_post_vote(str(sessionInfo['currentUserID']), str(post.PostID))
             if currentVote==None:
-                post['UserVote'] = 0
+                post.UserVote = 0
             else:
-                post['UserVote'] = currentVote['Vote']
+                post.UserVote = currentVote['Vote']
         else:
-            post['UserVote'] = 0
-        post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
-        post['Content'] = post['Content'][:200]
+            post.UserVote = 0
+        post.TotalVotes = post.Upvotes - post.Downvotes
+        post.Content = post.Content[:200]
     return render_template('home.html', currentPage='home', **sessionInfo, searchBarForm = searchBarForm, recentPosts = recentPosts)
 
 @app.route('/searchPosts', methods=["GET", "POST"])
@@ -265,19 +271,16 @@ def searchPosts():
     searchTopic = request.args.get('topic', default='0')
     searchBarForm.topic.data = searchTopic
 
-    sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
-    sql += " INNER JOIN user ON post.UserID=user.UserID"
-    sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
-    sql += " WHERE post.Title LIKE '%" + searchQuery + "%'"
-
     if searchTopic!='0':
-        sql += " AND topic.TopicID='" + searchTopic + "'"
+        relatedPosts = db.session.query(Post).filter(Post.Title=='%' + searchQuery + '%', Posts.TopicID==searchTopic).all()
 
-    dictCursor.execute(sql)
-    relatedPosts = dictCursor.fetchall()
+    else:
+        relatedPosts = db.session.query(Post).filter(Post.Title.like('%' + searchQuery + '%')).all()
+
+
     for post in relatedPosts:
-        post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
-        post['Content'] = post['Content'][:200]
+        post.TotalVotes = post.Upvotes - post.Downvotes
+        post.Content = post.Content[:200]
 
     return render_template('searchPost.html', currentPage='search', **sessionInfo, searchBarForm=searchBarForm, postList=relatedPosts)
 
@@ -286,39 +289,32 @@ def viewPost(postID, sessionId):
     if not sessionInfo['login']:
         return redirect('/login')
 
-    sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
-    sql += " INNER JOIN user ON post.UserID=user.UserID"
-    sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
-    sql += " WHERE PostID=" + str(postID)
-    dictCursor.execute(sql)
-    post = dictCursor.fetchone()
-    post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
-    currentVote = DatabaseManager.get_user_post_vote(str(sessionInfo['currentUserID']), str(post['PostID']))
+    post, username, topic = db.session.query(Post, User.Username, Topic.Content).filter(Post.PostID==postID).join(User, User.UserID==Post.UserID).join(Topic, Topic.TopicID==Post.TopicID).one()
+    post.TotalVotes = post.Upvotes - post.Downvotes
+    post.Username = username
+    post.Topic = topic
+    currentVote = DatabaseManager.get_user_post_vote(str(sessionInfo['currentUserID']), str(post.PostID))
     if currentVote==None:
-        post['UserVote'] = 0
+        post.UserVote = 0
     else:
-        post['UserVote'] = currentVote['Vote']
+        post.UserVote = currentVote['Vote']
 
-    sql = "SELECT comment.CommentID, comment.Content, comment.DatetimePosted, comment.Upvotes, comment.Downvotes, comment.DatetimePosted, user.Username FROM comment"
-    sql += " INNER JOIN user ON comment.UserID=user.UserID"
-    sql += " WHERE comment.PostID=" + str(postID)
-    dictCursor.execute(sql)
-    commentList = dictCursor.fetchall()
+    commentList = db.session.query(Comment).all()
     for comment in commentList:
-        comment['TotalVotes'] = comment['Upvotes'] - comment['Downvotes']
-        print(comment['TotalVotes'])
-        currentVote = DatabaseManager.get_user_comment_vote(str(sessionInfo['currentUserID']), str(comment['CommentID']))
+        user = db.session.query(User).filter(User.UserID==comment.UserID).one()
+        comment.Username = user.Username
+        comment.TotalVotes = comment.Upvotes - comment.Downvotes
+        currentVote = DatabaseManager.get_user_comment_vote(str(sessionInfo['currentUserID']), str(comment.CommentID))
         if currentVote==None:
-            comment['UserVote'] = 0
+            comment.UserVote = 0
         else:
-            comment['UserVote'] = currentVote['Vote']
+            comment.UserVote = currentVote['Vote']
 
-        sql = "SELECT reply.Content, reply.DatetimePosted, reply.DatetimePosted, user.Username FROM reply"
-        sql += " INNER JOIN user ON reply.UserID=user.UserID"
-        sql += " WHERE reply.CommentID=" + str(comment['CommentID'])
-        dictCursor.execute(sql)
-        replyList = dictCursor.fetchall()
-        comment['ReplyList'] = replyList
+        replyList = db.session.query(Reply).filter(Reply.CommentID==comment.CommentID).all()
+        for reply in replyList:
+            user = db.session.query(User).filter(User.UserID==comment.UserID).one()
+            reply.Username = user.Username
+        comment.ReplyList = replyList
 
     commentForm = Forms.CommentForm(request.form)
     replyForm = Forms.ReplyForm(request.form)
@@ -360,6 +356,7 @@ def addPost(sessionId):
 
     if request.method == 'POST' and postForm.validate():
         dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+
         sql = 'INSERT INTO post (TopicID, UserID, DateTimePosted, Title, Content, Upvotes, Downvotes) VALUES'
         sql += " ('" + str(postForm.topic.data )+ "'"
         sql += " , '" + str(sessionInfo['currentUserID']) + "'"
@@ -399,31 +396,16 @@ def login():
     global sessionID
     loginForm = Forms.LoginForm(request.form)
     if request.method == 'POST' and loginForm.validate():
-        sql = "SELECT UserID, Username, isAdmin FROM user WHERE"
-        sql += " Username='" + loginForm.username.data + "'"
-        sql += " AND Password='" + loginForm.password.data + "'"
-        dictCursor.execute(sql)
-        findUser = dictCursor.fetchone()
-        if findUser==None:
-            # loginForm.password.errors.append('Wrong email or password.')
-            sql = "SELECT Username FROM user u WHERE u.Username= '" + loginForm.username.data + "'"
-            tupleCursor.execute(sql)
-            username = tupleCursor.fetchone()
-            sql = "SELECT Password FROM user u WHERE u.Password='" + loginForm.password.data + "'"
-            tupleCursor.execute(sql)
-            password = tupleCursor.fetchone()
-            if not username and not password:
-                loginForm.password.errors.append('Wrong email and password.')
-            elif username==None:
-                loginForm.password.errors.append('Wrong email or username.')
+        try:
+            findUser = db.session.query(User).filter(User.Username==loginForm.username.data, User.Password==loginForm.password.data).one()
+        except:
+            loginForm.password.errors.append('Wrong email or username.')
 
-            elif password==None:
-                loginForm.password.errors.append('Wrong password.')
         else:
             sessionInfo['login'] = True
-            sessionInfo['currentUserID'] = int(findUser['UserID'])
-            sessionInfo['username'] = findUser['Username']
-            sessionInfo['isAdmin'] = findUser['isAdmin']
+            sessionInfo['currentUserID'] = int(findUser.UserID)
+            sessionInfo['username'] = findUser.Username
+            sessionInfo['isAdmin'] = findUser.isAdmin
             sessionID += 1
             sessionInfo['sessionID'] = sessionID
             sessions[sessionID] = sessionInfo
