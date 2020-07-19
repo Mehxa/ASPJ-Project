@@ -19,7 +19,7 @@
       <div class="sticky-top">
         <div>
           {%if login%}
-          <a href="/addPost/{{sessionID}}" class="btn btn-danger w-100">Add Post</a>
+          <a href="/addPost" class="btn btn-danger w-100">Add Post</a>
           {%else%}
           <a href="/login" class="btn btn-danger w-100">Add Post</a>
           {%endif%}
@@ -70,7 +70,7 @@
       {% for post in recentPosts %}
         <div class="post-preview my-3">
           {%if login%}
-          <a href="/viewPost/{{ post.PostID }}/{{sessionID}}">
+          <a href="/viewPost/{{ post.PostID }}">
           {%else%}
           <a href="/login">
           {%endif%}
@@ -83,13 +83,13 @@
           </a>
           <span class="post-meta">Posted by
             {%if login%}
-            <a href="/profile/{{post.Username}}/{{sessionID}}">{{ post.Username }}</a> on {{ post.DatetimePosted }} |
+            <a href="/profile/{{post.Username}}">{{ post.Username }}</a> on {{ post.DatetimePosted }} |
             {%else%}
             <a href="/login">{{ post.Username }}</a> on {{ post.DatetimePosted }} |
             {%endif%}
 
             {%if login%}
-            <a href="/indivTopic/{{post.TopicID}}/{{sessionID}}">{{ post.Topic }}</a>
+            <a href="/indivTopic/{{post.TopicID}}">{{ post.Topic }}</a>
             {%else%}
             <a href="/login">{{ post.Topic }}</a>
             {%endif%}

@@ -43,9 +43,6 @@ app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 mail = Mail(app)
 """ For testing purposes only. To make it convenient cause I can't remember all the account names.
 Uncomment the account that you would like to use. To run the program as not logged in, run the first one."""
-global sessionID
-sessionID = 0
-sessions={}
 sessionInfo = {'login': False, 'currentUserID': 0, 'username': '', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 1, 'username': 'NotABot', 'isAdmin': 1}
 # sessionInfo = {'login': True, 'currentUserID': 2, 'username': 'CoffeeGirl', 'isAdmin': 1}
@@ -56,9 +53,6 @@ sessionInfo = {'login': False, 'currentUserID': 0, 'username': '', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 7, 'username': 'johnnyjohnny', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 8, 'username': 'iamjeff', 'isAdmin': 0}
 sessionInfo = {'login': True, 'currentUserID': 9, 'username': 'hanbaobao', 'isAdmin': 0}
-sessionID += 1
-sessionInfo['sessionID'] = sessionID
-sessions[sessionID] = sessionInfo
 
 def get_all_topics(option):
     sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
@@ -257,8 +251,8 @@ def searchPosts():
 
     return render_template('searchPost.html', currentPage='search', **sessionInfo, searchBarForm=searchBarForm, postList=relatedPosts)
 
-@app.route('/viewPost/<int:postID>/<sessionId>', methods=["GET", "POST"])
-def viewPost(postID, sessionId):
+@app.route('/viewPost/<int:postID>', methods=["GET", "POST"])
+def viewPost(postID):
     if not sessionInfo['login']:
         return redirect('/login')
 
@@ -310,7 +304,7 @@ def viewPost(postID, sessionId):
         tupleCursor.execute(sql)
         db.commit()
         flash('Comment posted!', 'success')
-        return redirect('/viewPost/%d/%d' %(postID,sessionInfo['sessionID']))
+        return redirect('/viewPost/%d' %(postID))
 
     if request.method == 'POST' and replyForm.validate():
         dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
@@ -322,12 +316,12 @@ def viewPost(postID, sessionId):
         tupleCursor.execute(sql)
         db.commit()
         flash('Comment posted!', 'success')
-        return redirect('/viewPost/%d/%d' %(postID, sessionInfo['sessionID']))
+        return redirect('/viewPost/%d' %(postID))
 
     return render_template('viewPost.html', currentPage='viewPost', **sessionInfo, commentForm = commentForm, replyForm = replyForm, post = post, commentList = commentList)
 
-@app.route('/addPost/<sessionId>', methods=["GET", "POST"])
-def addPost(sessionId):
+@app.route('/addPost', methods=["GET", "POST"])
+def addPost():
     if not sessionInfo['login']:
         return redirect('/login')
 
@@ -350,8 +344,8 @@ def addPost(sessionId):
 
     return render_template('addPost.html', currentPage='addPost', **sessionInfo, postForm=postForm)
 
-@app.route('/feedback/<sessionId>', methods=["GET", "POST"])
-def feedback(sessionId):
+@app.route('/feedback', methods=["GET", "POST"])
+def feedback():
     if not sessionInfo['login']:
         return redirect('/login')
     feedbackForm = Forms.FeedbackForm(request.form)
@@ -366,13 +360,12 @@ def feedback(sessionId):
         tupleCursor.execute(sql)
         db.commit()
         flash('Feedback sent!', 'success')
-        return redirect('/feedback/%d' %sessionInfo['sessionID'])
+        return redirect('/feedback')
 
     return render_template('feedback.html', currentPage='feedback', **sessionInfo, feedbackForm = feedbackForm)
 
 @app.route('/login', methods=["GET", "POST"])
 def login():
-    global sessionID
     loginForm = Forms.LoginForm(request.form)
     if request.method == 'POST' and loginForm.validate():
         sql = "SELECT UserID, Username, isAdmin FROM user WHERE"
@@ -400,11 +393,8 @@ def login():
             sessionInfo['currentUserID'] = int(findUser['UserID'])
             sessionInfo['username'] = findUser['Username']
             sessionInfo['isAdmin'] = findUser['isAdmin']
-            sessionID += 1
-            sessionInfo['sessionID'] = sessionID
-            sessions[sessionID] = sessionInfo
             sessionRecord = open("templates\Files\sessionRecord.txt","a")
-            record = "%s signed in at %s, sessionID: %d \n" % (sessionInfo['username'], datetime.now(), sessionInfo['sessionID'])
+            record = "%s signed in at %s\n" % (sessionInfo['username'], datetime.now())
             sessionRecord.write(record)
             sessionRecord.close()
             flash('Welcome! You are now logged in as %s.' %(sessionInfo['username']), 'success')
@@ -417,20 +407,16 @@ def login():
 
 @app.route('/logout')
 def logout():
-    global sessionID
-    sessionInfo = sessions[sessionID]
     sessionInfo['login'] = False
     sessionInfo['currentUser'] = 0
     sessionInfo['username'] = ''
-    sessions.pop(sessionID)
     sessionRecord = open("templates\Files\sessionRecord.txt", "a")
-    record = "%s signed out at %s, sessionID: %d \n" % (sessionInfo['username'], datetime.now(), sessionInfo['sessionID'])
+    record = "%s signed out at %s \n" % (sessionInfo['username'], datetime.now())
     sessionRecord.close()
     return redirect('/home')
 
 @app.route('/signup', methods=["GET", "POST"])
 def signUp():
-    global sessionID
     signUpForm = Forms.SignUpForm(request.form)
 
     if request.method == 'POST' and signUpForm.validate():
@@ -461,25 +447,21 @@ def signUp():
             sessionInfo['login'] = True
             sessionInfo['currentUserID'] = int(findUser[0])
             sessionInfo['username'] = findUser[1]
-            sessionID += 1
-            sessionInfo['sessionID'] = sessionID
-            sessions[sessionID] = sessionInfo
             sessionRecord = open("templates\Files\sessionRecord.txt", "a")
-            record = "New account %s created at %s, sessionID: %d \n" % (sessionInfo['username'], datetime.now(), sessionInfo['sessionID'])
+            record = "New account %s created at %s \n" % (sessionInfo['username'], datetime.now())
             sessionRecord.close()
             flash('Account successfully created! You are now logged in as %s.' %(sessionInfo['username']), 'success')
             return redirect('/home')
 
     return render_template('signup.html', currentPage='signUp', **sessionInfo, signUpForm = signUpForm)
 
-@app.route('/profile/<username>/<sessionId>', methods=["GET", "POST"])
-def profile(username, sessionId):
-    # global sessionID
-    sessionInfo = sessions[sessionID]
+@app.route('/profile/<username>', methods=["GET", "POST"])
+def profile(username):
     updateProfileForm = Forms.SignUpForm(request.form)
     sql = "SELECT * FROM user WHERE user.Username='" + str(username) + "'"
     dictCursor.execute(sql)
     userData = dictCursor.fetchone()
+    print(userData)
     sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
     sql += " INNER JOIN user ON post.UserID=user.UserID"
     sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
@@ -527,12 +509,11 @@ def profile(username, sessionId):
             sessionInfo['login'] = True
             sessionInfo['currentUserID'] = int(findUser[0])
             sessionInfo['username'] = findUser[1]
-            sessions[sessionID] = sessionInfo
             sessionRecord = open("templates\Files\sessionRecord.txt", "a")
             if oldUsername == sessionInfo['username']:
-                record = "Account %s updated at %s, sessionID: %d \n" % (sessionInfo['username'], datetime.now(), sessionInfo['sessionID'])
+                record = "Account %s updated at %s \n" % (sessionInfo['username'], datetime.now())
             else:
-                record = "Account %s updated at %s, account's username is now %s sessionID: %d \n" % (oldUsername,  datetime.now(), sessionInfo['username'], sessionInfo['sessionID'])
+                record = "Account %s updated at %s, account's username is now %s\n" % (oldUsername,  datetime.now(), sessionInfo['username'])
             sessionRecord.close()
 
             if sessionInfo['currentUserID'] != oldUserID:
@@ -540,7 +521,7 @@ def profile(username, sessionId):
             else:
                 flash('Account successfully updated!', 'success')
 
-            return redirect('/profile/' + sessionInfo['username'] + '/' +str(sessionID))
+            return redirect('/profile/' + sessionInfo['username'])
 
 
 
@@ -549,15 +530,13 @@ def profile(username, sessionId):
 @app.route('/topics')
 def topics():
     # uncomment from here
-    # sessionInfo = sessions[sessionID]
     sql = "SELECT Content,TopicID FROM topic ORDER BY Content "
     tupleCursor.execute(sql)
     listOfTopics = tupleCursor.fetchall()
     return render_template('topics.html', currentPage='topics', **sessionInfo, listOfTopics=listOfTopics)
 
-@app.route('/indivTopic/<topicID>/<sessionId>', methods=["GET", "POST"])
-def indivTopic(topicID, sessionId):
-    sessionInfo = sessions[sessionID]
+@app.route('/indivTopic/<topicID>', methods=["GET", "POST"])
+def indivTopic(topicID):
     sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
     sql += " INNER JOIN user ON post.UserID=user.UserID"
     sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
@@ -575,7 +554,6 @@ def indivTopic(topicID, sessionId):
 
 @app.route('/adminProfile/<username>', methods=["GET", "POST"])
 def adminUserProfile(username):
-    sessionInfo = sessions[sessionID]
     sql = "SELECT * FROM user WHERE user.Username='" + str(username) + "'"
     dictCursor.execute(sql)
     userData = dictCursor.fetchone()
@@ -605,7 +583,6 @@ def adminUserProfile(username):
 
 @app.route('/adminHome', methods=["GET", "POST"])
 def adminHome():
-    sessionInfo = sessions[sessionID]
     searchBarForm = Forms.SearchBarForm(request.form)
     searchBarForm.topic.choices = get_all_topics('all')
     if request.method == 'POST' and searchBarForm.validate():
@@ -626,7 +603,6 @@ def adminHome():
 
 @app.route('/adminViewPost/<int:postID>', methods=["GET", "POST"])
 def adminViewPost(postID):
-    sessionInfo = sessions[sessionID]
 
     sql = "SELECT post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted,post.TopicID,post.PostID, user.Username, topic.Content AS Topic FROM post"
     sql += " INNER JOIN user ON post.UserID=user.UserID"
@@ -656,7 +632,6 @@ def adminViewPost(postID):
 @app.route('/adminTopics')
 def adminTopics():
     # uncomment from here
-    sessionInfo  = sessions[sessionID]
     sql = "SELECT Content,TopicID FROM topic ORDER BY Content "
     tupleCursor.execute(sql)
     listOfTopics = tupleCursor.fetchall()
@@ -664,7 +639,6 @@ def adminTopics():
 
 @app.route('/adminIndivTopic/<topicID>', methods=["GET", "POST"])
 def adminIndivTopic(topicID):
-    sessionInfo = sessions[sessionID]
     sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
     sql += " INNER JOIN user ON post.UserID=user.UserID"
     sql += " INNER JOIN topic ON post.TopicID=topic.TopicID"
@@ -682,7 +656,6 @@ def adminIndivTopic(topicID):
 
 @app.route('/addTopic', methods=["GET", "POST"])
 def addTopic():
-    sessionInfo = sessions[sessionID]
     # uncomment here
     if not sessionInfo['login']:
         return redirect('/login')
@@ -710,7 +683,6 @@ def addTopic():
 
 @app.route('/adminUsers')
 def adminUsers():
-    sessionInfo = sessions[sessionID]
     sql = "SELECT Username From user"
     tupleCursor.execute(sql)
     listOfUsernames = tupleCursor.fetchall()
@@ -766,7 +738,6 @@ def deletePost(postID):
     return redirect('/adminHome')
 @app.route('/adminFeedback')
 def adminFeedback():
-    sessionInfo = sessions[sessionID]
     sql = "SELECT feedback.Content, feedback.DatetimePosted, feedback.Reason,feedback.FeedbackID, user.Username, user.Email "
     sql += "FROM feedback"
     sql+= " INNER JOIN user ON feedback.UserID = user.UserID"
@@ -777,7 +748,6 @@ def adminFeedback():
 
 @app.route('/replyFeedback/<feedbackID>',methods=["GET","POST"])
 def replyFeedback(feedbackID):
-    sessionInfo = sessions[sessionID]
     sql = "SELECT feedback.Content, feedback.DatetimePosted, feedback.Reason,feedback.FeedbackID, user.Username, user.Email "
     sql += "FROM feedback"
     sql+= " INNER JOIN user ON feedback.UserID = user.UserID"
