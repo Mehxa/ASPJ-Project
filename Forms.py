@@ -34,7 +34,7 @@ class SignUpForm(Form):
 
 
 class PostForm(Form):
-    topic = SelectField('Topic', coerce=int)
+    topic = SelectField('Topic')
     title = StringField('Title', [validators.DataRequired()], render_kw={"placeholder": "e.g. Error Exception handling in Python"})
     content = TextAreaField('Content', [validators.DataRequired()], render_kw={"rows": 10, "placeholder": "Enter content here..."})
 
