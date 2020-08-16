@@ -3,7 +3,7 @@
 {% block style %}{% endblock %}
 
 {% block content %}
-{% from "includes/_formhelper.html" import render_field %}
+{% from "includes/_formhelper.html" import render_field, render_field_no_label %}
 {% autoescape false %}
 <div class="container mt-4">
   <div class="row justify-content-center">
@@ -22,6 +22,7 @@
         <div class="form-group">
           {{render_field(feedbackForm.comment, class= "form-control")}}
         </div>
+        <input id="userID" name="userID" type="text" value="{{currentUserID}}" style="display:none;">
 
         <div class="form-group">
           <input type="submit" class="btn btn-success">

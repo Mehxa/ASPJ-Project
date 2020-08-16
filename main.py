@@ -52,7 +52,7 @@ sessionInfo = {'login': False, 'currentUserID': 0, 'username': '', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 6, 'username': 'theauthenticcoconut', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 7, 'username': 'johnnyjohnny', 'isAdmin': 0}
 # sessionInfo = {'login': True, 'currentUserID': 8, 'username': 'iamjeff', 'isAdmin': 0}
-sessionInfo = {'login': True, 'currentUserID': 9, 'username': 'hanbaobao', 'isAdmin': 0}
+# sessionInfo = {'login': True, 'currentUserID': 9, 'username': 'hanbaobao', 'isAdmin': 0}
 
 def get_all_topics(option):
     sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
@@ -331,8 +331,8 @@ def addPost():
     if request.method == 'POST' and postForm.validate():
         dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
         sql = 'INSERT INTO post (TopicID, UserID, DateTimePosted, Title, Content, Upvotes, Downvotes) VALUES'
-        sql += " ('" + str(postForm.topic.data )+ "'"
-        sql += " , '" + str(sessionInfo['currentUserID']) + "'"
+        sql += " ('" + str(postForm.topic.data)+ "'"
+        sql += " , '" + str(postForm.userID.data) + "'"
         sql += " , '" + dateTime + "'"
         sql += " , '" + postForm.title.data + "'"
         sql += " , '" + postForm.content.data + "'"
@@ -353,7 +353,7 @@ def feedback():
     if request.method == 'POST' and feedbackForm.validate():
         dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
         sql = 'INSERT INTO feedback (UserID, Reason, Content, DateTimePosted) VALUES'
-        sql += " ('" + str(sessionInfo['currentUserID']) + "'"
+        sql += " ('" + str(feedbackForm.userID.data) + "'"
         sql += " , '" + feedbackForm.reason.data + "'"
         sql += " , '" + feedbackForm.comment.data + "'"
         sql += " , '" + dateTime + "')"
@@ -710,7 +710,7 @@ def deleteUser(username):
 
     return redirect('/adminUsers')
 
-@app.route('/adminDeletePost/<postID>', methods=['POST'])
+@app.route('/adminDeletePost/<postID>', methods=['POST','GET'])
 def deletePost(postID):
     sql = "SELECT post.Content, post.DatetimePosted, post.postID, user.Username, user.email "
     sql += "FROM post"
@@ -721,6 +721,7 @@ def deletePost(postID):
     print(email_info)
     sql = "DELETE FROM post WHERE post.PostID= '"+postID+"'"
     tupleCursor.execute(sql)
+    db.commit()
     try:
         msg = Message("Lorem Ipsum",
             sender="deloremipsumonlinestore@outlook.com",
@@ -736,6 +737,7 @@ def deletePost(postID):
         print("goes into except")
 
     return redirect('/adminHome')
+
 @app.route('/adminFeedback')
 def adminFeedback():
     sql = "SELECT feedback.Content, feedback.DatetimePosted, feedback.Reason,feedback.FeedbackID, user.Username, user.Email "
