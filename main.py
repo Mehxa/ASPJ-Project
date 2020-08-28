@@ -753,7 +753,6 @@ def addTopic():
     listOfTopics = tupleCursor.fetchall()
 
     topicForm = Forms.TopicForm(request.form)
-    print(listOfTopics)
     if request.method == 'POST' and topicForm.validate():
         topicTuple = (topicForm.topic.data,)
         if topicTuple in listOfTopics:
