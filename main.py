@@ -703,7 +703,7 @@ def adminViewPost(postID):
         tupleCursor.execute(sql)
         db.commit()
         flash('Comment posted!', 'success')
-        return redirect('/adminviewPost/%d' %(postID))
+        return redirect('/adminViewPost/%d' %(postID))
 
     if request.method == 'POST' and replyForm.validate():
         dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
@@ -715,7 +715,7 @@ def adminViewPost(postID):
         tupleCursor.execute(sql)
         db.commit()
         flash('Comment posted!', 'success')
-        return redirect('/adminviewPost/%d' %(postID))
+        return redirect('/adminViewPost/%d' %(postID))
 
     return render_template('adminViewPost.html', currentPage='adminViewPost', **sessionInfo, commentForm = commentForm, replyForm = replyForm, post = post, commentList = commentList)
 
