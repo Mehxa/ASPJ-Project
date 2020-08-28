@@ -575,8 +575,54 @@ def adminUserProfile(username):
     dictCursor.execute(sql)
     user = dictCursor.fetchone()
     admin = user['isAdmin']
+    updateProfileForm = Forms.SignUpForm(request.form)
+    if request.method == "POST" and updateProfileForm.validate():
+        oldUsername = username
+        oldUserID = sessionInfo['currentUserID']
+        sql = "UPDATE user "
+        sql += "SET Username='" + updateProfileForm.username.data + "',"
+        sql += "Password='" + updateProfileForm.password.data + "',"
+        sql += "Name='" + updateProfileForm.name.data + "',"
+        sql += "Email='" + updateProfileForm.email.data + "',"
+        sql += "Status='" + updateProfileForm.status.data + "',"
+        sql += "Birthday='" + str(updateProfileForm.dob.data) + "'"
+        sql += "WHERE UserID='" + str(sessionInfo['currentUserID']) + "'"
+        try:
+            tupleCursor.execute(sql)
+            db.commit()
 
-    return render_template("adminProfile.html", currentPage = "myProfile", **sessionInfo, userData = userData, recentPosts = recentPosts, admin=admin)
+        except mysql.connector.errors.IntegrityError as errorMsg:
+            errorMsg = str(errorMsg)
+            if 'email' in errorMsg.lower():
+                updateProfileForm.email.errors.append('The email has already been linked to another account. Please use a different email.')
+                flash("This email has already been linked to another account. Please use a different email.", "success")
+            elif 'username' in errorMsg.lower():
+                flash("This username is already taken!", "success")
+                updateProfileForm.username.errors.append('This username is already taken.')
+        else:
+            sql = "SELECT UserID, Username FROM user WHERE"
+            sql += " Username='" + updateProfileForm.username.data + "'"
+            sql += " AND Password='" + updateProfileForm.password.data + "'"
+            tupleCursor.execute(sql)
+            findUser = tupleCursor.fetchone()
+            sessionInfo['login'] = True
+            sessionInfo['currentUserID'] = int(findUser[0])
+            sessionInfo['username'] = findUser[1]
+            sessionRecord = open("templates\Files\sessionRecord.txt", "a")
+            if oldUsername == sessionInfo['username']:
+                record = "Account %s updated at %s \n" % (sessionInfo['username'], datetime.now())
+            else:
+                record = "Account %s updated at %s, account's username is now %s\n" % (oldUsername,  datetime.now(), sessionInfo['username'])
+            sessionRecord.close()
+
+            if sessionInfo['currentUserID'] != oldUserID:
+                flash('Account successfully updated! Your username now is %s.' %(sessionInfo['username']), 'success')
+            else:
+                flash('Account successfully updated!', 'success')
+
+            return redirect('/adminProfile/' + sessionInfo['username'])
+
+    return render_template("adminProfile.html", currentPage = "myProfile", **sessionInfo, userData = userData, recentPosts = recentPosts, admin=admin, updateProfileForm=updateProfileForm)
 
 
 
@@ -675,7 +721,6 @@ def adminViewPost(postID):
 
 @app.route('/adminTopics')
 def adminTopics():
-    # uncomment from here
     sql = "SELECT Content,TopicID FROM topic ORDER BY Content "
     tupleCursor.execute(sql)
     listOfTopics = tupleCursor.fetchall()
@@ -700,27 +745,29 @@ def adminIndivTopic(topicID):
 
 @app.route('/addTopic', methods=["GET", "POST"])
 def addTopic():
-    # uncomment here
     if not sessionInfo['login']:
         return redirect('/login')
-    # til here
     sql = "SELECT Content FROM topic ORDER BY Content"
 
     tupleCursor.execute(sql)
     listOfTopics = tupleCursor.fetchall()
 
     topicForm = Forms.TopicForm(request.form)
-    topicForm.topic.choices = listOfTopics
-    # uncomment here
+    print(listOfTopics)
     if request.method == 'POST' and topicForm.validate():
-        dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
-        sql = 'INSERT INTO topic ( UserID, Content, DateTimePosted) VALUES ( %s,%s, %s)'
-        val = (sessionInfo["currentUserID"],topicForm.topic.data, dateTime)
-        tupleCursor.execute(sql, val)
-        db.commit()
-        flash('Topic successfully created!', 'success')
-        return redirect('/adminHome')
-        # till here
+        topicTuple = (topicForm.topic.data,)
+        if topicTuple in listOfTopics:
+            print("Duplicate caught")
+            flash("Topic already exists!", "danger")
+            return redirect('/addTopic')
+        else:
+            dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+            sql = 'INSERT INTO topic ( UserID, Content, DateTimePosted) VALUES ( %s,%s, %s)'
+            val = (sessionInfo["currentUserID"],topicForm.topic.data, dateTime)
+            tupleCursor.execute(sql, val)
+            db.commit()
+            flash('Topic successfully created!', 'success')
+            return redirect('/adminHome')
 
 
     return render_template('addTopic.html', currentPage='addTopic', **sessionInfo, topicForm=topicForm)
