@@ -94,9 +94,9 @@ def calculate_updated_comment_votes(commentID):
     sql = "SELECT Upvotes, Downvotes FROM comment"
     sql += " WHERE CommentID='" + commentID + "'"
     dictCursor.execute(sql)
-    postVotes = dictCursor.fetchone()
+    commentVotes = dictCursor.fetchone()
     db.commit()
-    return postVotes['Upvotes'] - postVotes['Downvotes']
+    return commentVotes['Upvotes'] - commentVotes['Downvotes']
 
 def get_user_comment_vote(userID, commentID):
     sql = "SELECT Vote FROM comment_votes WHERE "

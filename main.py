@@ -276,7 +276,6 @@ def viewPost(postID):
     commentList = dictCursor.fetchall()
     for comment in commentList:
         comment['TotalVotes'] = comment['Upvotes'] - comment['Downvotes']
-        print(comment['TotalVotes'])
         currentVote = DatabaseManager.get_user_comment_vote(str(sessionInfo['currentUserID']), str(comment['CommentID']))
         if currentVote==None:
             comment['UserVote'] = 0
@@ -596,6 +595,14 @@ def adminHome():
     dictCursor.execute(sql)
     recentPosts = dictCursor.fetchall()
     for post in recentPosts:
+        if sessionInfo['login']:
+            currentVote = DatabaseManager.get_user_post_vote(str(sessionInfo['currentUserID']), str(post['PostID']))
+            if currentVote==None:
+                post['UserVote'] = 0
+            else:
+                post['UserVote'] = currentVote['Vote']
+        else:
+            post['UserVote'] = 0
         post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
         post['Content'] = post['Content'][:200]
 
@@ -603,6 +610,8 @@ def adminHome():
 
 @app.route('/adminViewPost/<int:postID>', methods=["GET", "POST"])
 def adminViewPost(postID):
+    commentForm = Forms.CommentForm(request.form)
+    replyForm = Forms.ReplyForm(request.form)
 
     sql = "SELECT post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted,post.TopicID,post.PostID, user.Username, topic.Content AS Topic FROM post"
     sql += " INNER JOIN user ON post.UserID=user.UserID"
@@ -611,6 +620,11 @@ def adminViewPost(postID):
     dictCursor.execute(sql)
     post = dictCursor.fetchone()
     post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
+    currentVote = DatabaseManager.get_user_post_vote(str(sessionInfo['currentUserID']), str(post['PostID']))
+    if currentVote==None:
+        post['UserVote'] = 0
+    else:
+        post['UserVote'] = currentVote['Vote']
 
     sql = "SELECT comment.CommentID, comment.Content, comment.DatetimePosted, comment.Upvotes, comment.Downvotes, comment.DatetimePosted, user.Username FROM comment"
     sql += " INNER JOIN user ON comment.UserID=user.UserID"
@@ -619,6 +633,11 @@ def adminViewPost(postID):
     commentList = dictCursor.fetchall()
     for comment in commentList:
         comment['TotalVotes'] = comment['Upvotes'] - comment['Downvotes']
+        currentVote = DatabaseManager.get_user_comment_vote(str(sessionInfo['currentUserID']), str(comment['CommentID']))
+        if currentVote==None:
+            comment['UserVote'] = 0
+        else:
+            comment['UserVote'] = currentVote['Vote']
 
         sql = "SELECT reply.Content, reply.DatetimePosted, reply.DatetimePosted, user.Username FROM reply"
         sql += " INNER JOIN user ON reply.UserID=user.UserID"
@@ -627,7 +646,32 @@ def adminViewPost(postID):
         replyList = dictCursor.fetchall()
         comment['ReplyList'] = replyList
 
-    return render_template('adminViewPost.html', currentPage='adminViewPost', **sessionInfo, post = post, commentList = commentList)
+    if request.method == 'POST' and commentForm.validate():
+        dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+        sql = "INSERT INTO comment (PostID, UserID, Content, DateTimePosted, Upvotes, Downvotes) VALUES"
+        sql += " ('" + str(postID) + "'"
+        sql += " , '" + str(sessionInfo['currentUserID']) + "'"
+        sql += " , '" + commentForm.comment.data + "'"
+        sql += " , '" + dateTime + "'"
+        sql += " , 0, 0)"
+        tupleCursor.execute(sql)
+        db.commit()
+        flash('Comment posted!', 'success')
+        return redirect('/adminviewPost/%d' %(postID))
+
+    if request.method == 'POST' and replyForm.validate():
+        dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+        sql = "INSERT INTO reply (UserID, CommentID, Content, DateTimePosted) VALUES"
+        sql += " ('" + str(sessionInfo['currentUserID']) + "'"
+        sql += " , '" + replyForm.repliedID.data + "'"
+        sql += " , '" + replyForm.reply.data + "'"
+        sql += " , '" + dateTime + "')"
+        tupleCursor.execute(sql)
+        db.commit()
+        flash('Comment posted!', 'success')
+        return redirect('/adminviewPost/%d' %(postID))
+
+    return render_template('adminViewPost.html', currentPage='adminViewPost', **sessionInfo, commentForm = commentForm, replyForm = replyForm, post = post, commentList = commentList)
 
 @app.route('/adminTopics')
 def adminTopics():
